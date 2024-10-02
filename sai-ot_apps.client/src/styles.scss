@@ -1,0 +1,95 @@
+/* You can add global styles to this file, and also import other style files */
+
+.bs-tooltip-w-xs {
+  max-width: 64px !important;
+
+  .tooltip-inner {
+    max-width: 64px !important;
+  }
+}
+
+.bs-tooltip-w-sm {
+  max-width: 128px !important;
+
+  .tooltip-inner {
+    max-width: 128px !important;
+  }
+}
+
+.bs-tooltip-w-md {
+  max-width: 160px !important;
+
+  .tooltip-inner {
+    max-width: 160px !important;
+  }
+}
+
+.bs-tooltip-w-lg {
+  max-width: 256px !important;
+
+  .tooltip-inner {
+    max-width: 256px !important;
+  }
+}
+
+.bs-tooltip-w-auto {
+  max-width: none !important;
+
+  .tooltip-inner {
+    max-width: none !important;
+  }
+}
+
+
+.logoCaption { font-family: "Roboto", sans-serif; font-weight: 500; font-size: 22px; position: relative; top: 7px; left: 8px; letter-spacing: 1px;}
+.userimage{ 
+    width: 34px;display: inline-block;height: auto;
+    img{max-width: 100%;border-radius: 50%;}
+}
+.profile-menu { 
+    position: absolute; right: -3px; text-align: right; background: #c1abdc; top: 48px; 
+    padding: 8px 15px; font-size: 14px; min-width: 120px; 
+    border-radius: 0 0 8px 8px; display: none;
+    a{
+        color: #333;
+        &:hover{color: blue;}
+    }
+}
+.dropdown:hover .profile-menu{display: block;}
+.logout .dropdown{padding-bottom: 14px; margin-top: 14px;}
+.title img{max-width: 150px;}
+
+  /* WebKit (Chrome, Safari, Opera) */
+::-webkit-scrollbar { width: 6px;}
+::-webkit-scrollbar-track { background: #f1f1f1;}
+::-webkit-scrollbar-thumb {background: #888; border-radius: 8px;}
+::-webkit-scrollbar-thumb:hover {background: #555;}
+
+/* Firefox */
+*{ scrollbar-width: thin; scrollbar-color: #888 #f1f1f1;}
+*::-moz-scrollbar-track {background: #f1f1f1;}
+*::-moz-scrollbar-thumb {background: #888; border-radius: 8px;}
+*::-moz-scrollbar-thumb:hover {background: #555;}
+@keyframes frames {
+    0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      -webkit-transform: rotate(359deg);
+      transform: rotate(359deg);
+    }
+  }
+#spinner{
+    -webkit-animation: frames 1s infinite linear !important;
+    animation: frames 1s infinite linear !important;
+    background: transparent;
+    border: 4px solid #ccc;
+    border-radius: 100%;
+    border-top-color: #14103e;
+    width: 30px;
+    height: 30px;
+    opacity: .6;
+    padding: 0;
+}
+

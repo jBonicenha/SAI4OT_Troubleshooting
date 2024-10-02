@@ -1,0 +1,15 @@
+<div class="list">
+    <ul>
+        <li *ngFor="let item of getMenu()">
+            <a *ngIf="!!item.link" [routerLink]="item.link">{{ item.name }}</a>
+            <div *ngIf="!item.link">
+                <b>{{ item.name }}</b>
+                <ul>
+                    <li *ngFor="let item of getMenu(item.id)">
+                        <a *ngIf="!!item.link" [routerLink]="item.link">{{ item.name }}</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,32 @@
+<div class="container-fluid px-5">
+  <div class="row sticky-top py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="my-0">SAI OT PLC Troubleshooting</h4>
+    </div>
+  </div>
+
+  <div class="row info-description mb-4">
+    This program can interpret ladder PLC logic, read online values, and provide the cause of any shutdown of this current example.
+  </div>
+
+
+  <div class="chat-container">
+    <div class="chat-messages">
+      <div *ngFor="let message of messages" [ngClass]="{'user-message': message.user === 'User', 'server-message': message.user === 'Server'}">
+        <div class="message-bubble">
+          <strong>{{message.user}}:</strong> {{message.text}}
+          <div id="result" *ngIf="message.showFormattedContent">
+            <markdown clipboard lineNumbers class="variable-binding" [data]="message.formattedContent">
+            </markdown>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input">
+      <input [(ngModel)]="newMessage" placeholder="Type your message here..." (keyup.enter)="sendMessage()" />
+      <button (click)="sendMessage()">Send</button>
+    </div>
+  </div>
+
+
+

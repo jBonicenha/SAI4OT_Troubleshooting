@@ -1,0 +1,133 @@
+<div class="container-fluid px-5">
+  <div class="row sticky-top py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="my-0">PLC Code Auditor</h4>
+    </div>
+  </div>
+
+  <div class="row info-description mb-4">
+    This program is responsible for auditing PLC code based on established standards and AI-driven analysis.
+  </div>
+
+  <!-- Application MENU -->
+  <div class="row">
+    <form [formGroup]="profileForm" (ngSubmit)="auditDescriptionMain()">
+      <div class="row mb-2">
+        <label for="folderPath" class="col-form-label col-md-4">Folder path:</label>
+        <div class="mb-2">
+          <input id="folderPath" type="text" placeholder="Enter the path to the PLC backup file" formControlName="folderPath" class="form-control">
+        </div>
+        <label for="codeAuditorOption" class="col-form-label col-md-4">Option:</label>
+        <div class="mb-2">
+          <select id="codeAuditorOption" formControlName="codeAuditorOption" class="form-select" (change)="onOptionChange($event)">
+            <option *ngFor="let option of codeAuditorMenu" [value]="option">{{ option }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="option1" *ngIf="Option1Selected">
+
+        <label for="selectedOption" class="col-form-label col-md-4">PLC Routines:</label>
+        <div class="mb-2">
+          <select id="selectedOption" formControlName="selectedOption" class="form-select">
+            <option *ngFor="let format of outputFormats" [value]="format">{{ format }}</option>
+          </select>
+        </div>
+        <!-- LOADING and GENERATE button -->
+        <div class="row mb-2">
+          <div class="d-flex justify-content-end" *ngIf="!loading">
+            <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+          </div>
+          <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+            <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TEXT Result provided by SAI Applications -->
+  <div id="result" *ngIf="SAIPreRungAnalysis">
+    <markdown clipboard lineNumbers class="variable-binding" [data]="SAIPreRungAnalysis">
+    </markdown>
+    <!-- RUNG Description Editor -->
+    <div class="row">
+      <div class="accordion" id="accordionPanelsStayOpenExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" [ngClass]="{ collapsed: !!result }" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne"
+                    [attr.aria-expanded]="!result" aria-controls="panelsStayOpen-collapseOne">
+              Rung description revisor
+            </button>
+          </h2>
+          <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" [ngClass]="{ show: !result }">
+            <div class="accordion-body">
+
+              <form [formGroup]="codeGenForm">
+                <div class="row mb-2">
+                  <div class="d-flex flex-row justify-content-start align-items-center">
+                    <label for="namespace" class="col-form-label me-2">Progress:</label>
+                  </div>
+                  <div class="mb-2">
+                    <div class="progress" role="progressbar" aria-label="Success example" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100">
+                      <div class="progress-bar bg-success" [style.width.%]="progress">{{progress}}%</div>
+                    </div>
+                  </div>
+                  <div class="d-flex flex-row justify-content-start align-items-center">
+                    <h5 class="me-1">Information about {{currentRung.Rung}}</h5>
+                  </div>
+                  <div class="w-100"></div>
+
+                  <fieldset disabled>
+                    <div class="mb-2">
+                      <label for="currentDescription" class="form-label">Current description:</label>
+                      <input type="text" id="currentDescription" class="form-control" placeholder="{{currentRung.Comment}}">
+                    </div>
+                    <div class="mb-2">
+                      <label for="mistake" class="form-label">Mistake:</label>
+                      <input type="text" id="mistake" class="form-control" placeholder="{{currentRung.Mistake}}">
+                    </div>
+                    <div class="mb-2">
+                      <label for="suggestion" class="form-label">Suggested:</label>
+                      <input type="text" id="suggestion" class="form-control" placeholder="{{currentRung.Suggestion}}">
+                    </div>
+                  </fieldset>
+
+                  <div class="row mb-2">
+                    <div class="d-flex flex-row justify-content-start align-items-center">
+                      <label for="userStories" class="col-form-label me-2">Logic:</label>
+                      <img src="assets/img/Screenshot_138.png" class="img-fluid" alt="...">
+                    </div>
+                  </div>
+                  <div class="row mb-2">
+                    <div class="d-flex flex-row justify-content-start align-items-center">
+                      <label for="newDescription" class="col-form-label me-2">New description:</label>
+                    </div>
+                    <div class="mb-2">
+                      <textarea id="newDescription" rows="4" cols="30" formControlName="newDescription" class="form-control"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+
+                <ng-container *ngIf="!loading">
+                  <div class="row mb-2">
+                    <div class="d-flex justify-content-end">
+                      <button type="button" class="btn btn-primary me-2" (click)="applyComment()">
+                        Apply and next
+                      </button>
+                      <button type="button" class="btn btn-primary" (click)="skipComment()">
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                </ng-container>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

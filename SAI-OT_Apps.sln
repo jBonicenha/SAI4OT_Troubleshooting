@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35219.272
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAI-OT_Apps.Server", "SAI-OT_Apps.Server\SAI-OT_Apps.Server.csproj", "{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "sai-ot_apps.client", "sai-ot_apps.client\sai-ot_apps.client.esproj", "{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {09635A61-0B2C-45C6-8D4F-875FFFC42124}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,59 @@
+<div class="container-fluid px-5">
+  <div class="row sticky-top py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="my-0">Code Converter (Ignition)</h4>
+    </div>
+  </div>
+
+  <div class="row info-description mb-4">
+    This program converts Ignition Vision screens into Ignition Perspective, enhancing user experience and modernizing applications efficiently.
+  </div>
+
+  <div class="row">
+    <form [formGroup]="profileForm" (ngSubmit)="postSingleDocument()">
+      <div class="row mb-2">
+        <label for="folderPath" class="col-form-label col-md-4">Folder path:</label>
+        <div class="mb-2">
+          <input id="folderPath" type="text" placeholder="Enter the path to the screen converter folder" formControlName="folderPath" class="form-control">
+        </div>
+      </div>
+      <div class="row mb-2">
+        <div class="d-flex justify-content-end" *ngIf="!loading">
+          <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate component list</button>
+        </div>
+        <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+          <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- New div for displaying results -->
+  <div class="row mt-4" *ngIf="results && results.length">
+    <h5>Component list</h5>
+    <div class="row info-description mb-4">
+      Analyzing the screen to be converted these components where found in template. Generate these components in SVG and saved in templateSVG folder of your project and click in Generate screen to create the new Perspective screen.
+    </div>
+    <div>
+      <ul id="results">
+        <li *ngFor="let result of results">{{ result }}</li>
+      </ul>
+    </div>
+      <h5>Convert screen</h5>
+      <div class="row info-description mb-4">
+        This program converts Ignition Vision screens into Ignition Perspective, enhancing user experience and modernizing applications efficiently.
+      </div>
+    <div class="d-flex justify-content-end" *ngIf="!loading">
+      <button (click)="generateScreen()" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate screen</button>
+    </div>
+  </div>
+
+
+    <div class="row mt-4" *ngIf="generateScreenResult">
+      <h5>Result</h5>
+      <div class="row info-description mb-4">
+        <div id="generateScreenResult">
+          {{ generateScreenResult }}
+        </div>
+      </div>
+    </div>
