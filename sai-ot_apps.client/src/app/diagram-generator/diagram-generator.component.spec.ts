@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DiagramGeneratorComponent } from './diagram-generator.component';
+import { DiagramGeneratorComponent } from './DiagramGeneratorComponent';
 
 describe('DiagramGeneratorResultComponent', () => {
   let component: DiagramGeneratorComponent;

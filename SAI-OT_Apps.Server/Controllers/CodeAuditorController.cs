@@ -11,6 +11,11 @@ namespace SAI_OT_Apps.Server.Controllers
             _codeAuditorService = new CodeAuditorService(); // Instantiate the service here
         }
 
+        public class RoutineCodeRequest
+        {
+            public string RoutineCode { get; set; }
+        }
+
         [HttpPost("RoutinesList")]
         public async Task<IActionResult> RoutinesList([FromQuery] string PLCfilePath)
         {
@@ -78,11 +83,11 @@ namespace SAI_OT_Apps.Server.Controllers
         }
 
         [HttpPost("SAIDescriptionAnalysis")]
-        public async Task<IActionResult> SAIDescriptionAnalysis([FromQuery] string routineCode)
+        public async Task<IActionResult> SAIDescriptionAnalysis([FromBody] RoutineCodeRequest request)
         {
             try
             {
-                var (preRungAnalysis, rungs) = await _codeAuditorService.SAIDescriptionAnalysis(routineCode);
+                var (preRungAnalysis, rungs) = await _codeAuditorService.SAIDescriptionAnalysis(request.RoutineCode);
                 var result = new
                 {
                     PreRungAnalysis = preRungAnalysis,

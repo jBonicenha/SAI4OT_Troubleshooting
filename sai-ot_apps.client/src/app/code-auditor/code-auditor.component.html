@@ -67,14 +67,6 @@
               <form [formGroup]="codeGenForm">
                 <div class="row mb-2">
                   <div class="d-flex flex-row justify-content-start align-items-center">
-                    <label for="namespace" class="col-form-label me-2">Progress:</label>
-                  </div>
-                  <div class="mb-2">
-                    <div class="progress" role="progressbar" aria-label="Success example" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100">
-                      <div class="progress-bar bg-success" [style.width.%]="progress">{{progress}}%</div>
-                    </div>
-                  </div>
-                  <div class="d-flex flex-row justify-content-start align-items-center">
                     <h5 class="me-1">Information about {{currentRung.Rung}}</h5>
                   </div>
                   <div class="w-100"></div>
@@ -95,9 +87,11 @@
                   </fieldset>
 
                   <div class="row mb-2">
-                    <div class="d-flex flex-row justify-content-start align-items-center">
-                      <label for="userStories" class="col-form-label me-2">Logic:</label>
-                      <img src="assets/img/Screenshot_138.png" class="img-fluid" alt="...">
+                    <div class="col-12">
+                      <label for="logicImage" class="col-form-label">Logic:</label>
+                    </div>
+                    <div class="col-12">
+                      <img [src]="logicImagePath" class="img-fluid" alt="...">
                     </div>
                   </div>
                   <div class="row mb-2">
@@ -113,7 +107,11 @@
 
                 <ng-container *ngIf="!loading">
                   <div class="row mb-2">
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex flex-row justify-content-start align-items-center w-100">
+                      <label for="namespace" class="col-form-label me-2">Progress:</label>
+                      <div class="progress flex-grow-1 me-2" role="progressbar" aria-label="Success example" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-success" [style.width.%]="progress">{{progress}}%</div>
+                      </div>
                       <button type="button" class="btn btn-primary me-2" (click)="applyComment()">
                         Apply and next
                       </button>

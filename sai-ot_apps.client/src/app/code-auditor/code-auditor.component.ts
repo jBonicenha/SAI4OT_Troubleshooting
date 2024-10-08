@@ -34,7 +34,7 @@ export class CodeAuditorComponent implements OnInit {
   });
 
   outputFormats: string[] = [];
-  codeAuditorMenu: string[] = ['Option 1', 'Option 2', 'Option 3'];
+  codeAuditorMenu: string[] = ['AI Description creator editor', 'Interlock Map Generator', 'Equipment Auditor', 'Logic Auditor'];
   result: string = '';
 
   codeGenForm: FormGroup = new FormGroup({
@@ -54,7 +54,8 @@ export class CodeAuditorComponent implements OnInit {
   progress: number = 0;
   Option1Selected: boolean = false;
   UserSkipComment: boolean = true;
-  constructor(private http: HttpClient, private router: Router, private fb: FormBuilder) { }
+  logicImagePath: string = '';
+  constructor(private http: HttpClient, private router: Router, private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
 
   get selectedOptions() {
     return this.profileForm.get('selectedOption')?.value;
@@ -81,6 +82,9 @@ export class CodeAuditorComponent implements OnInit {
 
       // Call SAIDescriptionAnalysis only after GetRoutineByName completes
       await this.SAIDescriptionAnalysis(this.routineCode);
+
+      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
+      console.log('logicImagePath:', this.logicImagePath);
     }
     catch (error)
     {
@@ -95,7 +99,7 @@ export class CodeAuditorComponent implements OnInit {
     console.log('Selected option:', selectedOption);
     // Perform any additional actions based on the selected option
     switch (selectedOption) {
-      case 'Option 1':
+      case 'AI Description creator editor':
         //
         this.Option1Selected = true;
         this.PLCFilePath = this.profileForm.get('folderPath')?.value;
@@ -114,7 +118,6 @@ export class CodeAuditorComponent implements OnInit {
     }
   }
 
-
   postDatabaseSchema() {
 
   }
@@ -125,10 +128,7 @@ export class CodeAuditorComponent implements OnInit {
     const rungNumber = this.currentRung.Rung;
     this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: newDesc });
     this.UserSkipComment = false;
-    this.skipComment();
-    
-
-
+    this.skipComment();  
   }
 
   //Go to the next rung 
@@ -144,6 +144,13 @@ export class CodeAuditorComponent implements OnInit {
       this.currentIndex++;
       this.progress = Math.round((this.currentIndex / this.SAIRungAnalysis.length) * 100);      
       this.setCurrentRung();
+
+      //Change image path
+      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
+      console.log('logicImagePath:', this.logicImagePath);
+
+      // Manually trigger change detection
+      this.cdr.detectChanges();
     }
     //End of the list
     else
@@ -157,9 +164,11 @@ export class CodeAuditorComponent implements OnInit {
         this.UpdateRoutineWithComments(this.PLCFilePath, this.routineName, this.RoutineDescriptionRevised);
         this.RoutineDescriptionRevised = [];
       }
-      this.currentIndex = 0;      
+      this.currentIndex = 0;
+      this.logicImagePath = '';
+      this.cdr.detectChanges();
     }
-    this.UserSkipComment = true;
+    this.UserSkipComment = true;    
   }
 
   //During the revision processing set the current rung
@@ -214,8 +223,9 @@ export class CodeAuditorComponent implements OnInit {
   //SAI make the analysis based in the code provided
   async SAIDescriptionAnalysis(routineCode: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = `https://localhost:7070/SAIDescriptionAnalysis?routineCode=${encodeURIComponent(routineCode)}`;
-      this.http.post<{ preRungAnalysis: any, rungAnalysis: any }>(url, null, {}).subscribe(
+      const url = `https://localhost:7070/SAIDescriptionAnalysis`;
+      const body = { routineCode: routineCode }; // Send routineCode in the body
+      this.http.post<{ preRungAnalysis: any, rungAnalysis: any }>(url, body, {}).subscribe(
         (data) => {
           this.SAIPreRungAnalysis = data.preRungAnalysis;
           this.SAIRungAnalysis = data.rungAnalysis;

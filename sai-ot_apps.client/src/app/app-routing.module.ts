@@ -4,7 +4,7 @@ import { AppComponent } from './app.component';
 import { MainPageComponent } from './main-page/main-page.component';
 import { TroubleshootingComponent } from './troubleshooting/troubleshooting.component';
 import { CodeConverterComponent } from './code-converter/code-converter.component';
-import { DiagramGeneratorComponent } from './diagram-generator/diagram-generator.component';
+import { DiagramGeneratorComponent } from './diagram-generator/DiagramGeneratorComponent';
 import { CodeAuditorComponent } from './code-auditor/code-auditor.component';
 
 const routes: Routes = [

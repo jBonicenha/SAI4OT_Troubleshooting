@@ -11,9 +11,10 @@ import { LeftMenuComponent } from './left-menu/pages/left-menu.component';
 import { LeftMenuRoutingModule } from './left-menu/left-menu.routing.module';
 import { CodeConverterComponent } from './code-converter/code-converter.component';
 import { MarkdownModule } from 'ngx-markdown';
-import { DiagramGeneratorComponent } from './diagram-generator/diagram-generator.component';
+import { DiagramGeneratorComponent } from './diagram-generator/DiagramGeneratorComponent';
 import { CodeAuditorComponent } from './code-auditor/code-auditor.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { CodeTesterComponent } from './code-tester/code-tester.component';
 
 
 @NgModule({ declarations: [
@@ -23,7 +24,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
         MainPageComponent,
         TroubleshootingComponent,
         CodeConverterComponent,
-        CodeAuditorComponent
+        CodeAuditorComponent,
+        CodeTesterComponent
     ],
     bootstrap: [AppComponent],
     imports: [BrowserModule,

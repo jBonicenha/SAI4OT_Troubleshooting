@@ -102,9 +102,17 @@ namespace SAI_OT_Apps.Server.Services
 
         public string UpdateRoutineWithComments(string PLCfilePath, string routineName, List<RungDescription> RoutineDescriptionRevised)
         {
-            string xmlFilePath = PLCfilePath;
+            // Create a new file path based on the original file path
+            string newFilePath = Path.Combine(Path.GetDirectoryName(PLCfilePath),
+                                              Path.GetFileNameWithoutExtension(PLCfilePath) + "_Commented" +
+                                              Path.GetExtension(PLCfilePath));
+
+            // Copy the contents of the original file to the new file
+            File.Copy(PLCfilePath, newFilePath, true);
+
+            // Load the new file into the XmlDocument object
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(xmlFilePath);
+            xmlDoc.Load(newFilePath);
 
             XmlNode routineNode = xmlDoc.SelectSingleNode($"//Routine[@Name='{routineName}']");
 
@@ -146,8 +154,8 @@ namespace SAI_OT_Apps.Server.Services
                         }
                     }
                 }
-
-                xmlDoc.Save(xmlFilePath);
+                // Save the changes to the new file
+                xmlDoc.Save(newFilePath);
                 return "Routine updated successfully.";
             }
 
@@ -197,7 +205,8 @@ namespace SAI_OT_Apps.Server.Services
 
             foreach (var line in lines)
             {
-                if (line.Contains("Rung by Rung analysis:"))
+                //if (line.Contains("Rung by Rung analysis:"))
+                if (line.IndexOf("Rung by Rung analysis:", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     isRungAnalysis = true;
                     continue;

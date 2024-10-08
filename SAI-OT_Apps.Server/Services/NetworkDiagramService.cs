@@ -116,7 +116,7 @@ namespace SAI_OT_Apps.Server.Services
             try
             {
                 var client = new RestClient("https://sai-library.saiapplications.com");
-                var requestNetworkDiagram = new RestRequest("api/templates/66b209112f0a3330a655fbbd/execute", Method.Post)
+                var requestNetworkDiagram = new RestRequest("api/templates/66fc27d5763941747843d7d2/execute", Method.Post)
                     .AddJsonBody(new
                     {
                         inputs = new Dictionary<string, string>
