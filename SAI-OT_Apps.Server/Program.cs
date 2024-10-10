@@ -15,6 +15,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddScoped<SAI_OT_Apps.Server.Services.NetworkDiagramService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeTesterService>(); // Adiciona o PlanilhaService
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
