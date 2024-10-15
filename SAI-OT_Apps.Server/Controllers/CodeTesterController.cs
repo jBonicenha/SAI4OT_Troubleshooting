@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SAI_OT_Apps.Server.Models;
 using SAI_OT_Apps.Server.Services;
 using System.IO;
 
@@ -71,6 +72,95 @@ namespace SAI_OT_Apps.Server.Controllers
             try
             {
                 var result = await CodeTesterService.UpdateTagResult(tagValues, tagResult);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
+        }
+
+        [HttpPost("OPCReadAndCheckTags")]
+        public async Task<IActionResult> OPCReadAndCheckTags([FromBody] Dictionary<string, List<string>> tagsGroupedByResult)
+        {
+            try
+            {
+                var result = await CodeTesterService.OPCReadAndCheckTagsAsync(tagsGroupedByResult);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
+        }
+
+        // Rota para testar as TAGs associadas a um TAG_RESULT
+        [HttpGet("TestTagResult")]
+        public async Task<IActionResult> TestTagResult([FromQuery] string tagResult)
+        {
+            try
+            {
+                CodeTest result = await CodeTesterService.TestTagResult(tagResult);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("TestAllTagResults")]
+        public async Task<IActionResult> TestAllTagResults()
+        {
+            try
+            {
+                var result = await CodeTesterService.GetAllTagResults();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
+        }
+
+        [HttpPost("ProcessExcel")]
+        public async Task<IActionResult> ProcessExcel([FromForm] IFormFile arquivo)
+        {
+            try
+            {
+                var result = await CodeTesterService.ProcessExcelFile(arquivo);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
+        }
+
+        [HttpPost("PopulateExcel")]
+        public async Task<IActionResult> PopulateExcel([FromQuery] string filePath)
+        {
+            try
+            {
+                var result = await CodeTesterService.PopulateExcelFromOPC(filePath);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error: " + ex.Message });
+            }
+        }
+
+        [HttpPost("GenerateExcelFromOPC")]
+        public async Task<IActionResult> GenerateExcelFromOPC()
+        {
+            try
+            {
+                var result = await CodeTesterService.GetAllTagsFromOPCAndWriteToExcel();
                 return Ok(new { message = result });
             }
             catch (Exception ex)
