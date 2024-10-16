@@ -960,7 +960,7 @@ namespace SAI_OT_Apps.Server.Services
 
         public async static Task<string> GetAllTagsFromOPCAndWriteToExcel()
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // Defina o contexto da licença aqui
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             var config = new ApplicationConfiguration()
             {
                 ApplicationName = "OPCUAClient",
@@ -999,8 +999,20 @@ namespace SAI_OT_Apps.Server.Services
                 {
                     Console.WriteLine("Conexão com o servidor OPC foi bem-sucedida.");
 
-                    // Chama o método para buscar apenas as TAGs específicas
-                    List<string> tagList = await GetSpecificOpcNodes(session, new NodeId("ns=2;s=Channel1.CodeTester"));
+                    // Navega até o "Channel1"
+                    var channelNode = GetNodeIdByDisplayName(session, ObjectIds.ObjectsFolder, "Channel1");
+                    if (channelNode == null) throw new Exception("Channel1 node não encontrado.");
+
+                    // Navega até o "CodeTester" dentro do Channel1
+                    var codeTesterNode = GetNodeIdByDisplayName(session, channelNode, "CodeTester");
+                    if (codeTesterNode == null) throw new Exception("CodeTester node não encontrado.");
+
+                    // Agora que estamos no "CodeTester", buscamos todas as TAGs
+                    List<string> allTags = GetAllOpcNodes(session, codeTesterNode);
+
+                    // Separar TAGs SET e CHECK
+                    List<string> setTags = allTags.Where(t => !t.Contains("TAG_RESULT")).ToList(); // TAGs SET
+                    List<string> checkTags = allTags.Where(t => t.Contains("TAG_RESULT")).ToList(); // TAGs CHECK
 
                     using (ExcelPackage package = new ExcelPackage())
                     {
@@ -1013,50 +1025,46 @@ namespace SAI_OT_Apps.Server.Services
 
                         int row = 2; // Começando da linha 2 (depois do cabeçalho)
 
-                        foreach (var tag in tagList)
+                        // Variáveis de controle
+                        int setIndex = 0;
+                        int checkIndex = 0;
+
+                        // Processa a cada 2 TAGs de SET, uma de CHECK
+                        while (setIndex < setTags.Count || checkIndex < checkTags.Count)
                         {
-                            try
+                            // Adiciona até 2 TAGs de SET
+                            for (int i = 0; i < 2 && setIndex < setTags.Count; i++, setIndex++)
                             {
+                                var tag = setTags[setIndex];
                                 var nodeId = new NodeId(tag);
                                 var value = session.ReadValue(nodeId);
 
-                                // Verifica se o valor foi lido corretamente
-                                string function = tag.Contains("TAG_RESULT") ? "CHECK" : "SET";
-                                string result;
-
-                                if (value.StatusCode == Opc.Ua.StatusCodes.Good)
-                                {
-                                    if (function == "SET")
-                                    {
-                                        result = "OK"; // Apenas "OK" para SET
-                                    }
-                                    else // FUNCTION é "CHECK"
-                                    {
-                                        result = value.Value != null && value.Value.ToString().ToUpper() == "TRUE" ? "TRUE" : "FALSE";
-                                    }
-
-                                    Console.WriteLine($"TAG {tag} encontrada com valor {value.Value}, inserindo na planilha.");
-                                }
-                                else
-                                {
-                                    result = "NOT FOUND"; // Se a TAG não for encontrada
-                                    Console.WriteLine($"TAG {tag} não foi encontrada no OPC.");
-                                }
-
-                                // Remover o prefixo "ns=2;s=Channel1.CodeTester." da TAG
-                                string tagName = tag.Replace("ns=2;s=Channel1.CodeTester.", "");
-
-                                // Converter o valor para uppercase e adicioná-lo na planilha
-                                worksheet.Cells[row, 1].Value = function;
-                                worksheet.Cells[row, 2].Value = tagName; // Exibe apenas o nome da TAG
-                                worksheet.Cells[row, 3].Value = value.Value != null ? value.Value.ToString().ToUpper() : "N/A"; // O valor lido em uppercase
-                                worksheet.Cells[row, 4].Value = result; // O resultado
+                                string result = value.StatusCode == Opc.Ua.StatusCodes.Good ? "OK" : "NOT FOUND";
+                                worksheet.Cells[row, 1].Value = "SET";
+                                worksheet.Cells[row, 2].Value = tag.Split('.').Last(); // Pegando o nome simplificado da TAG
+                                worksheet.Cells[row, 3].Value = value.Value != null ? value.Value.ToString().ToUpper() : "N/A";
+                                worksheet.Cells[row, 4].Value = result;
 
                                 row++;
                             }
-                            catch (Exception ex)
+
+                            // Adiciona 1 TAG de CHECK
+                            if (checkIndex < checkTags.Count)
                             {
-                                Console.WriteLine($"Erro ao processar a TAG {tag}: {ex.Message}");
+                                var checkTag = checkTags[checkIndex++];
+                                var checkNodeId = new NodeId(checkTag);
+                                var checkValue = session.ReadValue(checkNodeId);
+
+                                string checkResult = checkValue.StatusCode == Opc.Ua.StatusCodes.Good ?
+                                    (checkValue.Value != null && checkValue.Value.ToString().ToUpper() == "TRUE" ? "TRUE" : "FALSE")
+                                    : "NOT FOUND";
+
+                                worksheet.Cells[row, 1].Value = "CHECK";
+                                worksheet.Cells[row, 2].Value = checkTag.Split('.').Last();
+                                worksheet.Cells[row, 3].Value = checkValue.Value != null ? checkValue.Value.ToString().ToUpper() : "N/A";
+                                worksheet.Cells[row, 4].Value = checkResult;
+
+                                row++;
                             }
                         }
 
@@ -1085,6 +1093,75 @@ namespace SAI_OT_Apps.Server.Services
                 session?.Close();
             }
         }
+
+        // Função para buscar NodeId por DisplayName
+        private static NodeId GetNodeIdByDisplayName(Session session, NodeId parentNodeId, string displayName)
+        {
+            BrowseDescription nodeToBrowse = new BrowseDescription
+            {
+                NodeId = parentNodeId,
+                BrowseDirection = BrowseDirection.Forward,
+                ReferenceTypeId = ReferenceTypeIds.HierarchicalReferences,
+                IncludeSubtypes = true,
+                NodeClassMask = (uint)NodeClass.Object | (uint)NodeClass.Variable,
+                ResultMask = (uint)BrowseResultMask.All
+            };
+
+            BrowseResultCollection results;
+            DiagnosticInfoCollection diagnosticInfos;
+            session.Browse(null, null, 0, new BrowseDescriptionCollection { nodeToBrowse }, out results, out diagnosticInfos);
+
+            foreach (var result in results)
+            {
+                foreach (var reference in result.References)
+                {
+                    if (reference.DisplayName.Text == displayName)
+                    {
+                        return ExpandedNodeId.ToNodeId(reference.NodeId, session.NamespaceUris);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // Função para buscar todas as TAGs (Nodes) dentro de "CodeTester"
+        private static List<string> GetAllOpcNodes(Session session, NodeId nodeId)
+        {
+            List<string> tagList = new List<string>();
+
+            BrowseDescription nodeToBrowse = new BrowseDescription
+            {
+                NodeId = nodeId,
+                BrowseDirection = BrowseDirection.Forward,
+                ReferenceTypeId = ReferenceTypeIds.HierarchicalReferences,
+                IncludeSubtypes = true,
+                NodeClassMask = (uint)NodeClass.Variable,
+                ResultMask = (uint)BrowseResultMask.All
+            };
+
+            BrowseResultCollection results;
+            DiagnosticInfoCollection diagnosticInfos;
+            session.Browse(null, null, 0, new BrowseDescriptionCollection { nodeToBrowse }, out results, out diagnosticInfos);
+
+            foreach (var result in results)
+            {
+                foreach (var reference in result.References)
+                {
+                    var childNodeId = ExpandedNodeId.ToNodeId(reference.NodeId, session.NamespaceUris);
+                    if (childNodeId != null && reference.NodeClass == NodeClass.Variable)
+                    {
+                        tagList.Add(childNodeId.ToString());
+                        Console.WriteLine($"TAG {reference.DisplayName.Text} encontrada.");
+                    }
+                }
+            }
+
+            return tagList;
+        }
+
+
+
 
 
 
