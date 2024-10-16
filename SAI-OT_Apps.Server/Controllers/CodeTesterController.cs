@@ -169,6 +169,20 @@ namespace SAI_OT_Apps.Server.Controllers
             }
         }
 
+        [HttpPost("validate-and-generate")]
+        public async Task<IActionResult> ValidateAndGenerate([FromForm] IFormFile planilha)
+        {
+            try
+            {
+                var result = await CodeTesterService.ValidateAndGenerateJsonFromExcel(planilha);
+                return Ok(result); // Retorna o JSON gerado
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Erro interno: " + ex.Message });
+            }
+        }
+
 
     }
 }
