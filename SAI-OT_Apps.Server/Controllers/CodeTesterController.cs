@@ -20,7 +20,7 @@ namespace SAI_OT_Apps.Server.Controllers
         {
             try
             {
-                var result = await CodeTesterService.ValidateAndGenerateJsonFromExcel(planilha);
+                var result = await _codeTesterService.ValidateAndGenerateJsonFromExcel(planilha);
                 return Ok(result); // Retorna o JSON gerado
             }
             catch (Exception ex)

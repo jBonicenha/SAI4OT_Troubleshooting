@@ -42,7 +42,8 @@ namespace SAI_OT_Apps.Server.Services
             return await Session.Create(config, endpoint, false, "OPCUAClient", 60000, null, null);
         }
 
-        public async static Task<List<CodeTest>> ValidateAndGenerateJsonFromExcel(IFormFile planilha)
+        // Função para validar e gerar o JSON a partir da planilha
+        public async Task<List<CodeTest>> ValidateAndGenerateJsonFromExcel(IFormFile planilha)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // Defina o contexto da licença aqui
             List<CodeTest> codeTests = new List<CodeTest>();  // Lista final de CodeTests
@@ -101,7 +102,6 @@ namespace SAI_OT_Apps.Server.Services
                                 Value = value,
                                 Result = $"Erro: {ex.Message}" // Inclui a mensagem completa do erro
                             });
-
                             continue; // Pule para a próxima iteração
                         }
 
@@ -139,11 +139,10 @@ namespace SAI_OT_Apps.Server.Services
                                 Function = "CHECK",
                                 Tag = tag,
                                 Value = opcValue.Value?.ToString().ToUpper() ?? "UNKNOWN", // Valor lido do OPC
-                                Result = opcValue.StatusCode == Opc.Ua.StatusCodes.Good ? "TRUE" : "Erro", // Ajuste na saída do result
+                                Result = opcValue.StatusCode == Opc.Ua.StatusCodes.Good ? "TRUE" : $"Erro: {opcValue.StatusCode}", // Ajuste na saída do result
                                 TagsTested = new List<TagTested>(tagsTested) // Copia os SETs associados
                             };
 
-                            // Remove a duplicata de CHECK do resultado
                             codeTests.Add(currentTest); // Adiciona o CodeTest ao JSON final
                             tagsTested.Clear(); // Limpa a lista de SETs para o próximo bloco
                         }
@@ -157,7 +156,7 @@ namespace SAI_OT_Apps.Server.Services
                             Function = "CHECK",
                             Tag = currentTest.Tag, // Usa a última TAG CHECK
                             Value = "UNKNOWN",
-                            Result = "Erro", // Finaliza o resultado como erro para as TAGs restantes
+                            Result = "Erro: BadNodeIdUnknown", // Finaliza o resultado como erro para as TAGs restantes
                             TagsTested = new List<TagTested>(tagsTested) // Copia os SETs associados
                         };
                         codeTests.Add(finalTest);
