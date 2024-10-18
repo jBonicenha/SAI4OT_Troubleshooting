@@ -19,6 +19,12 @@ namespace SAI_OT_Apps.Server.Services
 {
     public class TroubleshootingService
     {
+        private readonly string _apiKey;
+
+        public TroubleshootingService(IConfiguration configuration)
+        {
+            _apiKey = configuration["apiKey"];
+        }
         public async Task<List<string>> TroubleshootingProgram(string OTETag)
         {
             List<string> allWrongTagsFormatted = new List<string>();
@@ -50,7 +56,7 @@ namespace SAI_OT_Apps.Server.Services
         } // End Main
 
         // Função recursiva.  
-        static async Task<List<string>> RungExtractor(string OTELine)
+        async Task<List<string>> RungExtractor(string OTELine)
         {
             try
             {
@@ -93,7 +99,7 @@ namespace SAI_OT_Apps.Server.Services
                 {
                     return null;
                 }
-                string apiRequestResponse = await APIRequest(formattedLine, tagsFromClient); // Calls the function that calls SAI-APP (main logic solver).
+                string apiRequestResponse = await APIRequest(_apiKey, formattedLine, tagsFromClient); // Calls the function that calls SAI-APP (main logic solver).
                 if (apiRequestResponse == "")
                 {
                     return new List<string>();
@@ -135,9 +141,9 @@ namespace SAI_OT_Apps.Server.Services
         }
 
         // Call API SAI-APP
-        async static Task<string> APIRequest(String ll, String paramet)
+        async static Task<string> APIRequest(String apiKey, String ll, String paramet)
         {
-            var apiKey = "arxAcLQ4VkqBOtoLK7gL1Q";
+            //var apiKey = _apiKey;
 
             var rung = ll;
             var values = paramet;
@@ -280,7 +286,7 @@ namespace SAI_OT_Apps.Server.Services
         // Function API-Intro
         public async Task<String> SAITroubleshootingChatRequest(String inp)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q";
+            var apiKey = _apiKey;
             var msgInput = inp;
 
             var client = new RestClient("https://sai-library.saiapplications.com");
@@ -309,7 +315,7 @@ namespace SAI_OT_Apps.Server.Services
 
         public async Task<String> SAITroubleshootingChatResult(string ogTag, string allWrongTags)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q";
+            var apiKey = _apiKey;
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66d75d18516480c9c41bd3e7/execute", Method.Post)
@@ -338,7 +344,7 @@ namespace SAI_OT_Apps.Server.Services
         //Start here functions related to the Troubleshooting Code Explainer
         public async Task<String> SAITroubleshootingCodeExplainer(string tagName)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
             string plcCode = troubleshootingCodeExplainerPLCExtractor(tagName);
 
             var client = new RestClient("https://sai-library.saiapplications.com");
@@ -477,7 +483,7 @@ namespace SAI_OT_Apps.Server.Services
 
         public async Task<String> SAITroubleshootingMenu(string msgInput)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66e9bcb8e34dad72070aa165/execute", Method.Post)

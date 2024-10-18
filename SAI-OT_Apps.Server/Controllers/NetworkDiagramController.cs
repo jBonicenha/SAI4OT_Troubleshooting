@@ -10,11 +10,12 @@ namespace SAI_OT_Apps.Server.Controllers
     [Route("api/[controller]")]
     public class NetworkDiagramController : ControllerBase
     {
-        private NetworkDiagramService _networkDiagramService;
+        private readonly NetworkDiagramService _networkDiagramService;
 
-        public NetworkDiagramController()
+        // O IConfiguração será injetado aqui
+        public NetworkDiagramController(NetworkDiagramService networkDiagramService)
         {
-            _networkDiagramService = new NetworkDiagramService(); // Instantiate the service here
+            _networkDiagramService = networkDiagramService; // A injeção de dependência
         }
 
         //This function analyze the PLC backup files and provide EqpList and EqpConnectionList as output

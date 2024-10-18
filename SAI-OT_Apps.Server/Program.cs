@@ -1,6 +1,7 @@
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
+Console.WriteLine($"API Key PROGRAM: {builder.Configuration["apiKey"]}");
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -15,7 +16,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddScoped<SAI_OT_Apps.Server.Services.NetworkDiagramService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeTesterService>(); // Adiciona o PlanilhaService
+builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeTesterService>();
+builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeAuditorService>();
+builder.Services.AddScoped<SAI_OT_Apps.Server.Services.TroubleshootingService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

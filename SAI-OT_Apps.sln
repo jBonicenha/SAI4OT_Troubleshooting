@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35219.272
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAI-OT_Apps.Server", "SAI-OT_Apps.Server\SAI-OT_Apps.Server.csproj", "{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAI-OT_Apps.Server", "SAI-OT_Apps.Server\SAI-OT_Apps.Server.csproj", "{241EFAA8-5B30-4B19-80FD-C1D4A57E470A}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "sai-ot_apps.client", "sai-ot_apps.client\sai-ot_apps.client.esproj", "{64E5B45B-1624-4F12-A48A-2EA6DC1E3B3B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{35816CDA-B468-4842-B2F0-37C6F5473A6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

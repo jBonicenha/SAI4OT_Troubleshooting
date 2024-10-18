@@ -8,6 +8,7 @@
     <SpaRoot>..\sai-ot_apps.client</SpaRoot>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:4200</SpaProxyServerUrl>
+    <UserSecretsId>346125be-3cb1-4ba5-aaeb-a3de16157df6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

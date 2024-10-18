@@ -6,9 +6,9 @@ namespace SAI_OT_Apps.Server.Controllers
     public class CodeAuditorController : Controller
     {
         private CodeAuditorService _codeAuditorService;
-        public CodeAuditorController()
+        public CodeAuditorController(CodeAuditorService codeAuditorService)
         {
-            _codeAuditorService = new CodeAuditorService(); // Instantiate the service here
+            _codeAuditorService = codeAuditorService; // Instantiate the service here
         }
 
         public class RoutineCodeRequest

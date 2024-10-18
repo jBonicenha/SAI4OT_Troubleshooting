@@ -12,9 +12,9 @@ namespace SAI_OT_Apps.Server.Controllers
     public class TroubleshootingController : Controller
     {
         private TroubleshootingService _troubleshootingService;
-        public TroubleshootingController()
+        public TroubleshootingController(TroubleshootingService troubleshootingService)
         {
-            _troubleshootingService = new TroubleshootingService(); // Instantiate the service here
+            _troubleshootingService = troubleshootingService; // Instantiate the service here
         }
 
         [HttpPost("TroubleshootingProgram")]

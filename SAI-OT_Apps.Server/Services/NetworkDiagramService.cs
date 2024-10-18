@@ -20,14 +20,22 @@ namespace SAI_OT_Apps.Server.Services
         private List<string> _diagrams;
         List<List<string>> eqpDetailsList;
         Dictionary<string, List<string>> eqpConnectionsList;
+        private readonly string _apiKey;
         public NetworkDiagramService()
         {
             _diagrams = new List<string>();
         }
 
+        public NetworkDiagramService(IConfiguration configuration) 
+        {
+            _apiKey = configuration["apiKey"];
+            Console.WriteLine("ApiKey Constructor: " + _apiKey);
+        }
+
         public async Task<string> SAINetworkAnalysis(string tableList, string connectionList)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
+            Console.WriteLine("ApiKey: " + _apiKey);
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66e38c05487300555ac2ef0a/execute", Method.Post)
@@ -110,7 +118,7 @@ namespace SAI_OT_Apps.Server.Services
 
         public async Task<string> generateDrawIOXML(string eqpConnectionString)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
             string xmlDiagram = null;
 
             try
