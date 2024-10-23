@@ -7,16 +7,16 @@ import { Component } from '@angular/core';
 })
 export class LeftMenuComponent {
   leftMenu: any[] = [
-    { name: 'Documentation Generator', link: "document-generator" },
+    //{ name: 'Documentation Generator', link: "document-generator" },
 
-    { id: "code-generator", name: 'Code Generator', parent: null },
+    //{ id: "code-generator", name: 'Code Generator', parent: null },
 
-    { name: 'Database Model', link: "code-generator/database", parent: "code-generator" },
-    { name: 'Backend', link: "code-generator/backend", parent: "code-generator" },
-    { name: 'Business Rules', link: "code-generator/business-rules", parent: "code-generator" },
-    { name: 'Frontend', link: "code-generator/frontend", parent: "code-generator" },
+    //{ name: 'Database Model', link: "code-generator/database", parent: "code-generator" },
+    //{ name: 'Backend', link: "code-generator/backend", parent: "code-generator" },
+    //{ name: 'Business Rules', link: "code-generator/business-rules", parent: "code-generator" },
+    //{ name: 'Frontend', link: "code-generator/frontend", parent: "code-generator" },
 
-    { name: 'Demo SAI Apps', link: "demo-sai-apps" },
+    //{ name: 'Demo SAI Apps', link: "demo-sai-apps" },
 
     { id: "sai-ot", name: 'SAI OT Apps', parent: null },
 
