@@ -2,6 +2,7 @@
 using OfficeOpenXml;
 using Opc.Ua.Client;
 using Opc.Ua;
+using RestSharp;
 
 
 
@@ -9,6 +10,11 @@ namespace SAI_OT_Apps.Server.Services
 {
     public class CodeTesterService
     {
+        private readonly string _apiKey;
+        public CodeTesterService(IConfiguration configuration)
+        {
+            _apiKey = configuration["apiKey"];
+        }
         // Função auxiliar para atualizar o valor da TAG no OPC
         private static async Task UpdateTagValueInOPC(Session session, NodeId nodeId, string value)
         {
@@ -170,6 +176,35 @@ namespace SAI_OT_Apps.Server.Services
             // Retorna o JSON completo
             return codeTests;
         }
+
+        public async Task<string> SAICodeTester(string jsonFromSpreadsheet)
+        {
+            var apiKey = _apiKey;
+
+            var client = new RestClient("https://sai-library.saiapplications.com");
+            var request = new RestRequest("api/templates/6716a919a111aae3bd5eb216/execute", Method.Post)
+                .AddJsonBody(new
+                {
+                    inputs = new Dictionary<string, string>
+                    {
+                        ["json"] = jsonFromSpreadsheet // JSON resultante da planilha
+                    }
+                })
+                .AddHeader("X-Api-Key", apiKey);
+
+            var response = await client.ExecuteAsync(request);
+
+            if (response.IsSuccessful)
+            {
+                return response.Content; // Aqui pode retornar diretamente a resposta da API
+            }
+            else
+            {
+                throw new Exception($"API SAICodeTester failed! Status: {response.StatusCode}, Error: {response.ErrorMessage}");
+            }
+        }
+
+
 
     }
 }

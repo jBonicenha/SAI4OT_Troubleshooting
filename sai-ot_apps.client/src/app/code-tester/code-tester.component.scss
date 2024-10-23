@@ -1,0 +1,64 @@
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.diagram-title {
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  font-size: 32px;
+  position: relative;
+}
+
+.sticky-top {
+  background-color: white;
+  position: sticky;
+}
+
+.info-description {
+  color: #666;
+  margin: 0;
+}
+
+.d-flex {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+/* Ajuste para o botão de geração */
+.btn-primary {
+  background-color: #007bff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+#spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #007bff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ajustes de layout para o resultado */
+#result {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

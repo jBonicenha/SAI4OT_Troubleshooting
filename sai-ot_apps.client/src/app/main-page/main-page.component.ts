@@ -19,6 +19,10 @@ export class MainPageComponent implements OnInit {
     this.router.navigate(['/troubleshooting']);
   }
 
+  navigateToCodeTester() {
+    this.router.navigate(['/code-tester']);
+  }
+
   ngOnInit() {
   }
 
