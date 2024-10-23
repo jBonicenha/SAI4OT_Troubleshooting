@@ -1,0 +1,51 @@
+<div class="container-fluid px-5">
+  <div class="row sticky-top py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="my-0">PLC Code Generator</h4>
+    </div>
+  </div>
+
+  <div class="row info-description mb-4">
+    This program can create PLC Code based in the Natual Language.
+  </div>
+
+  <div class="row">
+    <form [formGroup]="profileForm" (ngSubmit)="generatePLCRoutine()">
+      <div class="row mb-2">
+        <label for="routineName" class="col-form-label col-md-4">Routine Name:</label>
+        <div class="mb-2">
+          <input id="routineName" type="text" placeholder="Enter the routine name" formControlName="routineName" class="form-control">
+        </div>
+        <div class="d-flex flex-row justify-content-start align-items-center">
+          <label for="userRequest" class="col-form-label me-2">User request:</label>
+        </div>
+        <div class="mb-2">
+          <textarea id="userRequest" rows="6" cols="30" placeholder="Enter the code request"
+                    formControlName="userRequest" class="form-control"></textarea>
+        </div>
+      </div>
+      <div class="row mb-2">
+        <div class="d-flex justify-content-end" *ngIf="!loading">
+          <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+        </div>
+        <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+          <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+
+  <div id="result" *ngIf="SAIRoutineCode">
+    <markdown clipboard lineNumbers class="variable-binding limited-width" [data]="SAIRoutineCode">
+    </markdown>
+    <form [formGroup]="resultForm" (ngSubmit)="downloadPLCRoutineCode()">
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary" [disabled]="!resultForm.valid || loading">Download routine file</button>
+      </div>
+    </form>
+
+
+  </div>
+
+  </div>

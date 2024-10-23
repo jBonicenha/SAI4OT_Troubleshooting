@@ -61,7 +61,7 @@ namespace SAI_OT_Apps.Server.Services
             try
             {
                 XmlDocument Xdoc = new XmlDocument();
-                Xdoc.Load(@"C:\SAI\SAITroubleshooting\M70_1270_Dev.L5X"); // Load XML File. (In this case, write the correct file path from your computer).
+                Xdoc.Load(@"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X"); // Load XML File. (In this case, write the correct file path from your computer).
                 XmlElement root = Xdoc.DocumentElement;
 
                 XmlNodeList nodes = root.SelectNodes("//*[contains(text(), 'OTE(" + OTELine + ")')]"); // Extract the RUNG containing the specified OTE

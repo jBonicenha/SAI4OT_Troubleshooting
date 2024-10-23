@@ -1,0 +1,9 @@
+.limited-width {
+  max-width: 1300px; /* Set your desired maximum width */
+  overflow-x: hidden; /* Hide horizontal scroll */
+  word-wrap: break-word; /* Break long words to fit within the width */
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+  display: block; /* Ensure the element is treated as a block element */
+  padding: 10px; /* Optional: Add some padding for better readability */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
