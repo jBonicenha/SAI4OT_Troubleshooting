@@ -29,13 +29,11 @@ namespace SAI_OT_Apps.Server.Services
         public NetworkDiagramService(IConfiguration configuration) 
         {
             _apiKey = configuration["apiKey"];
-            Console.WriteLine("ApiKey Constructor: " + _apiKey);
         }
 
         public async Task<string> SAINetworkAnalysis(string tableList, string connectionList)
         {
             var apiKey = _apiKey; // TODO: Replace with your API key
-            Console.WriteLine("ApiKey: " + _apiKey);
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66e38c05487300555ac2ef0a/execute", Method.Post)

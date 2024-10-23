@@ -25,6 +25,7 @@ export class LeftMenuComponent {
     { name: 'PLC Code Auditor', link: "code-auditor", parent: "sai-ot" },
     { name: 'PLC Troubleshooting', link: "troubleshooting", parent: "sai-ot" },
     { name: 'Code Converter (Ignition)', link: "code-converter", parent: "sai-ot" },
+    { name: 'Code Tester', link: "code-tester", parent: "sai-ot" }
   ];
 
 
