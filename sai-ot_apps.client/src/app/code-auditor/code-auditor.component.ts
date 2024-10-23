@@ -45,6 +45,7 @@ export class CodeAuditorComponent implements OnInit {
 
 
   SAIPreRungAnalysis: string = '';
+  SAIUDTAnalysis: string = '';
   SAIRungAnalysis: Rung[] = [];
   RoutineDescriptionRevised: RungDescription[] = [];
   //SAIRungAnalysis: { [key: string]: string[] } = {};
@@ -53,6 +54,7 @@ export class CodeAuditorComponent implements OnInit {
   currentIndex: number = 0;
   progress: number = 0;
   Option1Selected: boolean = false;
+  OptionSelected: number = 0;
   UserSkipComment: boolean = true;
   logicImagePath: string = '';
   constructor(private http: HttpClient, private router: Router, private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
@@ -61,7 +63,15 @@ export class CodeAuditorComponent implements OnInit {
     return this.profileForm.get('selectedOption')?.value;
   }
 
-  //Main Request
+  //Main Request - UDT Analysis
+  async auditUDTMain(): Promise<void> {
+
+    this.loading = true;
+    await this.UDTAnalysis(this.PLCFilePath);
+
+  }
+
+  //Main Request - Description Analysis
   async auditDescriptionMain(): Promise<void> {
     try
     {
@@ -101,19 +111,27 @@ export class CodeAuditorComponent implements OnInit {
     switch (selectedOption) {
       case 'AI Description creator editor':
         //
+        this.OptionSelected = 1;
         this.Option1Selected = true;
         this.PLCFilePath = this.profileForm.get('folderPath')?.value;
         this.routinesList();
         break;
-      case 'Option 2':
+      case 'Interlock Map Generator':
         //
+        this.OptionSelected = 2;
         this.Option1Selected = false;
         break;
-      case 'Option 3':
+      case 'Equipment Auditor':
         //
+        this.OptionSelected = 3;
         this.Option1Selected = false;
+        break;
+      case 'Logic Auditor':
+        //
+        this.OptionSelected = 4;
         break;
       default:
+        this.OptionSelected = 0;
         console.log('Unknown option selected');
     }
   }
@@ -256,5 +274,23 @@ export class CodeAuditorComponent implements OnInit {
     }
   }
 
+  //Extract all the PLCs UDTs and Analyze with SAI
+  async UDTAnalysis(PLCfilePath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const url = `https://localhost:7070/AuditUDTAnalysis?PLCfilePath=${encodeURIComponent(PLCfilePath)}`;
+      this.http.post<string>(url, null, {}).subscribe(
+        (data) => {
+          this.SAIUDTAnalysis = data;
+          this.loading = false;
+          resolve();
+        },
+        (error) => {
+          console.error(error);
+          alert('Failed to fetch UDTAnalysis');
+          reject(error);
+        }
+      );
+    });
+  }
 
 }

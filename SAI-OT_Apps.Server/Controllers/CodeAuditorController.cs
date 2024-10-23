@@ -6,9 +6,9 @@ namespace SAI_OT_Apps.Server.Controllers
     public class CodeAuditorController : Controller
     {
         private CodeAuditorService _codeAuditorService;
-        public CodeAuditorController(CodeAuditorService codeAuditorService)
+        public CodeAuditorController()
         {
-            _codeAuditorService = codeAuditorService; // Instantiate the service here
+            _codeAuditorService = new CodeAuditorService(); // Instantiate the service here
         }
 
         public class RoutineCodeRequest
@@ -51,21 +51,6 @@ namespace SAI_OT_Apps.Server.Controllers
         }
 
         [HttpPost("UpdateRoutineWithComments")]
-        //public async Task<IActionResult> UpdateRoutineWithComments([FromQuery] string PLCfilePath, string routineName, List<RungDescription> RoutineDescriptionRevised)
-        //{
-        //    string result;
-        //    try
-        //    {
-        //        result = _codeAuditorService.UpdateRoutineWithComments(PLCfilePath, routineName, RoutineDescriptionRevised);
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log the exception (you can use any logging framework)
-        //        Console.WriteLine(ex.Message);
-        //        return StatusCode(500, "Internal server error: " + ex.Message);
-        //    }
-        //}
         public async Task<IActionResult> UpdateRoutineWithComments([FromQuery] string PLCfilePath, [FromQuery] string routineName, [FromBody] List<RungDescription> RoutineDescriptionRevised)
         {
             string result;
@@ -93,6 +78,31 @@ namespace SAI_OT_Apps.Server.Controllers
                     PreRungAnalysis = preRungAnalysis,
                     RungAnalysis = rungs
                 };
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use any logging framework)
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+        }
+    }
+
+    public class CodeAuditorControllerUDT : Controller
+    {
+        private CodeAuditorServiceUDT _codeAuditorServiceUDT;
+        public CodeAuditorControllerUDT()
+        {
+            _codeAuditorServiceUDT = new CodeAuditorServiceUDT(); // Instantiate the service here
+        }
+
+        [HttpPost("AuditUDTAnalysis")]
+        public async Task<IActionResult> AuditUDTCode([FromQuery] string PLCfilePath)
+        {            
+            try
+            {
+                var result = _codeAuditorServiceUDT.AuditUDTCode(PLCfilePath);
                 return Ok(result);
             }
             catch (Exception ex)

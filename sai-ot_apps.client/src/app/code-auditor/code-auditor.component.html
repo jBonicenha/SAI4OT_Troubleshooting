@@ -13,7 +13,7 @@
   <div class="row">
     <form [formGroup]="profileForm" (ngSubmit)="auditDescriptionMain()">
       <div class="row mb-2">
-        <label for="folderPath" class="col-form-label col-md-4">Folder path:</label>
+        <label for="folderPath" class="col-form-label col-md-4">Backup file path:</label>
         <div class="mb-2">
           <input id="folderPath" type="text" placeholder="Enter the path to the PLC backup file" formControlName="folderPath" class="form-control">
         </div>
@@ -25,7 +25,8 @@
         </div>
       </div>
 
-      <div id="option1" *ngIf="Option1Selected">
+      <!-- OPTION 1 SELECTED -->
+      <div id="option1" *ngIf="OptionSelected === 1;">
 
         <label for="selectedOption" class="col-form-label col-md-4">PLC Routines:</label>
         <div class="mb-2">
@@ -128,4 +129,24 @@
       </div>
     </div>
   </div>
+
+  <!-- OPTION 3 SELECTED -->
+  <div id="option3" *ngIf="OptionSelected === 3;">
+
+    <!-- LOADING and GENERATE button -->
+    <form [formGroup]="profileForm" (ngSubmit)="auditUDTMain()">
+      <div class="row mb-2">
+        <div class="d-flex justify-content-end" *ngIf="!loading">
+          <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+        </div>
+        <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+          <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+        </div>
+      </div>
+    </form>
+
+    <markdown clipboard lineNumbers class="variable-binding" [data]="SAIUDTAnalysis">
+    </markdown>
+  </div>
+
 </div>

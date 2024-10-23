@@ -1,9 +1,12 @@
-﻿using Org.BouncyCastle.Asn1.Ocsp;
+﻿using Opc.Ua;
+using Org.BouncyCastle.Asn1.Ocsp;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Xml;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 
 namespace SAI_OT_Apps.Server.Services
@@ -23,12 +26,6 @@ namespace SAI_OT_Apps.Server.Services
     }
     public class CodeAuditorService
     {
-        private readonly string _apiKey;
-
-        public CodeAuditorService(IConfiguration configuration)
-        {
-            _apiKey = configuration["apiKey"];
-        }
 
         public List<string> RoutinesList(string PLCfilePath)
         {
@@ -174,7 +171,7 @@ namespace SAI_OT_Apps.Server.Services
             List<Dictionary<string, string>> rungs = new List<Dictionary<string, string>>();
             string preRungAnalysis = "";
 
-            var apiKey = _apiKey; // TODO: Replace with your API key
+            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66f5710baa06172d8d5838c8/execute", Method.Post)
@@ -258,6 +255,140 @@ namespace SAI_OT_Apps.Server.Services
 
             preRungAnalysis = preRungAnalysisBuilder.ToString().Trim();
             return rungs;
+        }
+
+    }
+
+    public class CodeAuditorServiceUDT
+    {
+        public async Task<string> AuditUDTCode(string PLCfilePath)
+        {
+            string SAIUDTAnalysisResult = "";
+            string StandardUDTPath = @"C:\SAI\SAICodeAuditor\SAI_Auditor_EQP.L5X";
+            string ProgramUDTPath = @"C:\SAI\SAICodeAuditor\SAI_Auditor_EQP.L5X";
+
+            List<string> equipmentVariations = new List<string> { "EQP", "EQP", "EQUIPMENT", "EQUIP" };
+            List<string> commandVariations = new List<string> { "CMD", "COMMAND", "COMAND", "COMMAN" };
+
+
+            List<string> StandardUDTList = new List<string>();
+            List<string> ProgramUDTList = new List<string>();
+
+            StandardUDTList = GetUDTinPLCBackup(StandardUDTPath);
+            ProgramUDTList = GetUDTinPLCBackup(ProgramUDTPath);
+
+            //Run the UDT List in the Standard Program
+            foreach (string StandardUDTItem in StandardUDTList)
+            {
+                string pattern = "Name=\"(.*?)\"";
+                Match matchStandard = Regex.Match(StandardUDTItem, pattern);
+
+                if (matchStandard.Success)
+                {
+                    string StandardUDTItemName = matchStandard.Groups[1].Value;
+                    if(StandardUDTItemName == "IHM_EQP" || StandardUDTItemName == "IHM_CMD")
+                    {
+                        //Run the UDT List in the Selected Program
+                        foreach (string ProgramUDTItem in ProgramUDTList)
+                        {
+                            Match matchProgram = Regex.Match(ProgramUDTItem, pattern);
+                            if (matchStandard.Success)
+                            {
+                                string ProgramUDTItemName = matchProgram.Groups[1].Value;
+                                bool belongToList = false;
+                                if (StandardUDTItemName == "IHM_EQP")
+                                {
+                                    belongToList = belongsToVariations(StandardUDTItemName, equipmentVariations);
+                                }
+                                else
+                                {
+                                    belongToList = belongsToVariations(StandardUDTItemName, commandVariations);
+                                }
+                                //If the UDT was equal or similar go to SAI Analysis
+                                if (belongToList)
+                                {
+                                    SAIUDTAnalysisResult = await SAICompareUDT(StandardUDTItem, ProgramUDTItem);
+
+
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine("DataType Name not found.");
+                }
+
+            }
+
+
+            return SAIUDTAnalysisResult;
+
+        }
+
+        async Task<string> SAICompareUDT(string StandardUDT, string ProgramUDT)
+        {
+            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+
+            var client = new RestClient("https://sai-library.saiapplications.com");
+            var request = new RestRequest("api/templates/67056c171a5f3654aac3f6cf/execute", Method.Post)
+                .AddBody(new
+                {
+                    inputs = new Dictionary<string, string>
+                    {
+                        ["Standard XML"] = StandardUDT,
+                        ["XML to be compared"] = ProgramUDT
+                    }
+                })
+                .AddHeader("X-Api-Key", apiKey);
+            var response = await client.ExecuteAsync(request);
+            if (response.IsSuccessful)
+            {
+                string SAICompareUDTResul = System.Text.Json.JsonSerializer.Deserialize<string>(response.Content);
+                return SAICompareUDTResul;
+            }
+            else
+            {
+                throw new Exception("API SAICompareUDT failed!");
+            }
+        }
+
+        static bool belongsToVariations(string itemName, List<string> listVariations)
+        {
+            string upperItemName = itemName.ToUpper();
+            foreach (string variation in listVariations)
+            {
+                if (upperItemName == variation)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static List<string> GetUDTinPLCBackup(string xmlFilePath)
+        {
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(xmlFilePath);
+
+            XmlNode dataTypesNode = xmlDoc.SelectSingleNode("//DataTypes");
+
+            if (dataTypesNode != null)
+            {
+                List<string> dataTypeList = new List<string>();
+
+                foreach (XmlNode dataTypeNode in dataTypesNode.SelectNodes("DataType[@Class='User']"))
+                {
+                    string dataTypeXml = dataTypeNode.OuterXml;
+                    dataTypeList.Add(dataTypeXml);
+                }
+
+                return dataTypeList;
+            }
+            return null;
         }
 
     }
