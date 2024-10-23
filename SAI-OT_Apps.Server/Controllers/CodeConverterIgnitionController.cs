@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SAI_OT_Apps.Server.Services;
+using System;
 
 namespace SAI_OT_Apps.Server.Controllers
 {
     public class CodeConverterIgnitionController : Controller
     {
+
+
         private CodeConverterIgnitionService _codeConverterIgnitionService;
 
         public CodeConverterIgnitionController()
@@ -12,14 +15,22 @@ namespace SAI_OT_Apps.Server.Controllers
             _codeConverterIgnitionService = new CodeConverterIgnitionService(); // Instantiate the service here
         }
 
-        [HttpPost("CodeConverterIgnitionTemplateList")]
-        public async Task<IActionResult> CodeConverterIgnitionTemplateList([FromQuery] string projectPath)
+        public class TemplateDto
         {
-            List<string> result = new List<string>();
+            public int Index { get; set; }
+            public string Name { get; set; }
+            public string TemplatePath { get; set; }
+            public bool Converted { get; set; }
+        }
+
+        [HttpPost("ExtractTemplatesFromFile")]
+        public async Task<IActionResult> ExtractTemplatesFromFile([FromQuery] string projectPath)
+        {
             try
             {
-                result = await _codeConverterIgnitionService.CodeConverterIgnitionTemplateList(projectPath);
-                return Ok(result);
+                var result = await Task.Run(() => _codeConverterIgnitionService.ExtractTemplatesFromFile(projectPath));
+                var templateDtos = result.Select(t => new TemplateDto { Index = t.Index, Name = t.Name, TemplatePath = t.TemplatePath, Converted = t.Converted }).ToList();
+                return Ok(templateDtos);
             }
             catch (Exception ex)
             {
@@ -29,19 +40,5 @@ namespace SAI_OT_Apps.Server.Controllers
             }
         }
 
-        [HttpPost("CodeConverterIgnitionGenerateScreen")]
-        public async Task<IActionResult> CodeConverterIgnitionGenerateScreen([FromQuery] string projectPath)
-        {
-            try
-            {                
-                return Ok(_codeConverterIgnitionService.CodeConverterIgnitionGenerateScreen(projectPath));
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (you can use any logging framework)
-                Console.WriteLine(ex.Message);
-                return StatusCode(500, "Internal server error: " + ex.Message);
-            }
-        }
     }
 }

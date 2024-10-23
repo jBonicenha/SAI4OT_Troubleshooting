@@ -10,7 +10,7 @@
   </div>
 
   <div class="row">
-    <form [formGroup]="profileForm" (ngSubmit)="postSingleDocument()">
+    <form [formGroup]="profileForm" (ngSubmit)="generateTemplateList()">
       <div class="row mb-2">
         <label for="folderPath" class="col-form-label col-md-4">Folder path:</label>
         <div class="mb-2">
@@ -28,32 +28,29 @@
     </form>
   </div>
 
-  <!-- New div for displaying results -->
-  <div class="row mt-4" *ngIf="results && results.length">
-    <h5>Component list</h5>
+  <div class="row mt-4" *ngIf="templateList">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="my-0">Network IP table</h4>
+    </div>
     <div class="row info-description mb-4">
-      Analyzing the screen to be converted these components where found in template. Generate these components in SVG and saved in templateSVG folder of your project and click in Generate screen to create the new Perspective screen.
+      This table displays all the equipment found in the backup files and illustrates their interrelationships. Click on any row to view the related equipment.
     </div>
-    <div>
-      <ul id="results">
-        <li *ngFor="let result of results">{{ result }}</li>
-      </ul>
-    </div>
-      <h5>Convert screen</h5>
-      <div class="row info-description mb-4">
-        This program converts Ignition Vision screens into Ignition Perspective, enhancing user experience and modernizing applications efficiently.
-      </div>
-    <div class="d-flex justify-content-end" *ngIf="!loading">
-      <button (click)="generateScreen()" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate screen</button>
-    </div>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col">Index</th>
+          <th scope="col">Name</th>
+          <th scope="col">Path</th>
+          <th scope="col">Converted</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let templateDetail of templateList">
+          <th scope="row">{{ templateDetail.Index }}</th>
+          <td>{{ templateDetail.Name }}</td>
+          <td>{{ templateDetail.Path }}</td>
+          <td>{{ templateDetail.Converted }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-
-
-    <div class="row mt-4" *ngIf="generateScreenResult">
-      <h5>Result</h5>
-      <div class="row info-description mb-4">
-        <div id="generateScreenResult">
-          {{ generateScreenResult }}
-        </div>
-      </div>
-    </div>
