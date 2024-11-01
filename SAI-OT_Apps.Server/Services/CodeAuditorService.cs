@@ -26,6 +26,11 @@ namespace SAI_OT_Apps.Server.Services
     }
     public class CodeAuditorService
     {
+        private readonly string _apiKey;
+        public CodeAuditorService(IConfiguration configuration)
+        {
+            _apiKey = configuration["apiKey"];
+        }
 
         public List<string> RoutinesList(string PLCfilePath)
         {
@@ -171,7 +176,7 @@ namespace SAI_OT_Apps.Server.Services
             List<Dictionary<string, string>> rungs = new List<Dictionary<string, string>>();
             string preRungAnalysis = "";
 
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66f5710baa06172d8d5838c8/execute", Method.Post)
@@ -261,6 +266,11 @@ namespace SAI_OT_Apps.Server.Services
 
     public class CodeAuditorServiceUDT
     {
+        private readonly string _apiKey;
+        public CodeAuditorServiceUDT(IConfiguration configuration)
+        {
+            _apiKey = configuration["apiKey"];
+        }
         public async Task<string> AuditUDTCode(string PLCfilePath)
         {
             string SAIUDTAnalysisResult = "";
@@ -331,7 +341,7 @@ namespace SAI_OT_Apps.Server.Services
 
         async Task<string> SAICompareUDT(string StandardUDT, string ProgramUDT)
         {
-            var apiKey = "ePKQt7G7ZEiC2utRNRuW4Q"; // TODO: Replace with your API key
+            var apiKey = _apiKey; // TODO: Replace with your API key
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/67056c171a5f3654aac3f6cf/execute", Method.Post)

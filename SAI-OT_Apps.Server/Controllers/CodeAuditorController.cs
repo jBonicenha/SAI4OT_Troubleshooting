@@ -6,9 +6,10 @@ namespace SAI_OT_Apps.Server.Controllers
     public class CodeAuditorController : Controller
     {
         private CodeAuditorService _codeAuditorService;
-        public CodeAuditorController()
+
+        public CodeAuditorController(CodeAuditorService codeAuditorService)
         {
-            _codeAuditorService = new CodeAuditorService(); // Instantiate the service here
+            _codeAuditorService = codeAuditorService;
         }
 
         public class RoutineCodeRequest
@@ -92,9 +93,10 @@ namespace SAI_OT_Apps.Server.Controllers
     public class CodeAuditorControllerUDT : Controller
     {
         private CodeAuditorServiceUDT _codeAuditorServiceUDT;
-        public CodeAuditorControllerUDT()
+
+        public CodeAuditorControllerUDT(CodeAuditorServiceUDT codeAuditorServiceUDT)
         {
-            _codeAuditorServiceUDT = new CodeAuditorServiceUDT(); // Instantiate the service here
+            _codeAuditorServiceUDT = codeAuditorServiceUDT;
         }
 
         [HttpPost("AuditUDTAnalysis")]
