@@ -92,6 +92,12 @@ namespace SAI_OT_Apps.Server.Controllers
 
     public class CodeAuditorControllerUDT : Controller
     {
+        public class RungExtractionRequest
+        {
+            public string PdfPath { get; set; }
+            public string Routine { get; set; }
+        }
+
         private CodeAuditorServiceUDT _codeAuditorServiceUDT;
 
         public CodeAuditorControllerUDT(CodeAuditorServiceUDT codeAuditorServiceUDT)
@@ -114,5 +120,66 @@ namespace SAI_OT_Apps.Server.Controllers
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
         }
+
+        [HttpPost("extract-rungs")]
+        public IActionResult ExtractRungs([FromBody] RungExtractionRequest request) //async Task<IActionResult> ExtractRungs([FromBody] RungExtractionRequest request)
+        {
+            /*if (string.IsNullOrWhiteSpace(request.PdfPath) || string.IsNullOrWhiteSpace(request.Routine))
+            {
+                return BadRequest("Both 'pdfPath' and 'routine' parameters are required.");
+            }
+
+            if (!System.IO.File.Exists(request.PdfPath))
+            {
+                return NotFound("The specified PDF file does not exist.");
+            }
+
+            try
+            {
+                _codeAuditorServiceUDT.ExtractRungsFromPdf(request.PdfPath, request.Routine);
+                return Ok("Rungs extracted successfully.");
+            }
+            catch (FileNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }*/
+
+            // Chama a extração e obtém o caminho do diretório
+            string outputDirectory = _codeAuditorServiceUDT.ExtractRungsFromPdf(request.PdfPath, request.Routine);
+            return Ok(outputDirectory); // Retorna o caminho como resposta, se necessário
+        }
+
+        [HttpDelete("delete-output-directory")]
+        public IActionResult DeleteOutputDirectory([FromQuery] string outputDirectory)
+        {
+            /*if (string.IsNullOrEmpty(outputDirectory))
+            {
+                return BadRequest("O caminho do diretório não pode ser vazio.");
+            }
+
+            try
+            {
+                _codeAuditorServiceUDT.DeleteOutputDirectory(outputDirectory);
+                return Ok("Diretório e arquivos excluídos com sucesso.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro ao excluir o diretório: {ex.Message}");
+            }*/
+            try
+            {
+                _codeAuditorServiceUDT.DeleteOutputDirectory(null); // Chama sem parâmetro para usar o _outputDirectory
+                return Ok("Diretório e arquivos excluídos com sucesso.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro ao excluir o diretório: {ex.Message}");
+            }
+        }
     }
+
 }
