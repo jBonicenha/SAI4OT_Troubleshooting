@@ -121,55 +121,36 @@ namespace SAI_OT_Apps.Server.Controllers
             }
         }
 
-        [HttpPost("extract-rungs")]
-        public IActionResult ExtractRungs([FromBody] RungExtractionRequest request) //async Task<IActionResult> ExtractRungs([FromBody] RungExtractionRequest request)
+        //[HttpPost("extract-rungs")]
+        /*public IActionResult ExtractRungs([FromBody] RungExtractionRequest request) //async Task<IActionResult> ExtractRungs([FromBody] RungExtractionRequest request)
         {
-            /*if (string.IsNullOrWhiteSpace(request.PdfPath) || string.IsNullOrWhiteSpace(request.Routine))
-            {
-                return BadRequest("Both 'pdfPath' and 'routine' parameters are required.");
-            }
-
-            if (!System.IO.File.Exists(request.PdfPath))
-            {
-                return NotFound("The specified PDF file does not exist.");
-            }
-
-            try
-            {
-                _codeAuditorServiceUDT.ExtractRungsFromPdf(request.PdfPath, request.Routine);
-                return Ok("Rungs extracted successfully.");
-            }
-            catch (FileNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred: {ex.Message}");
-            }*/
-
             // Chama a extração e obtém o caminho do diretório
             string outputDirectory = _codeAuditorServiceUDT.ExtractRungsFromPdf(request.PdfPath, request.Routine);
             return Ok(outputDirectory); // Retorna o caminho como resposta, se necessário
+        }*/
+        [HttpGet("extract-rungs")]
+        public async Task<IActionResult> ExtractRungsFromPdf(string plcFilePath, string routineName)
+        {
+            Console.WriteLine($"Recebido plcFilePath: {plcFilePath}");
+            Console.WriteLine($"Recebido routineName: {routineName}");
+
+            // Gere um ID único para identificar a pasta temporária de cada solicitação
+            //string uniqueId = Guid.NewGuid().ToString();
+            string outputDirectory = Path.Combine(Path.GetTempPath(), "ExtractedRungs");//, uniqueId);
+            Directory.CreateDirectory(outputDirectory);
+
+            // Chame a Service para processar a extração, passando o outputDirectory
+            await _codeAuditorServiceUDT.ExtractRungsFromPdf(plcFilePath, routineName, outputDirectory);
+
+            // Retorne o caminho para a pasta temporária na resposta JSON
+            //string temporaryPathUrl = $"/temp-images/";//{uniqueId}";
+            //return Ok(new { temporaryPath = temporaryPathUrl });
+            return Ok( new { outputDirectory });
         }
 
         [HttpDelete("delete-output-directory")]
         public IActionResult DeleteOutputDirectory([FromQuery] string outputDirectory)
         {
-            /*if (string.IsNullOrEmpty(outputDirectory))
-            {
-                return BadRequest("O caminho do diretório não pode ser vazio.");
-            }
-
-            try
-            {
-                _codeAuditorServiceUDT.DeleteOutputDirectory(outputDirectory);
-                return Ok("Diretório e arquivos excluídos com sucesso.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro ao excluir o diretório: {ex.Message}");
-            }*/
             try
             {
                 _codeAuditorServiceUDT.DeleteOutputDirectory(null); // Chama sem parâmetro para usar o _outputDirectory
@@ -179,6 +160,37 @@ namespace SAI_OT_Apps.Server.Controllers
             {
                 return StatusCode(500, $"Erro ao excluir o diretório: {ex.Message}");
             }
+        }
+
+        [HttpGet("get-image/{fileName}")]
+        public IActionResult GetImage(string fileName)
+        {
+            string imagePath = Path.Combine(Path.GetTempPath(), "ExtractedRungs", fileName);
+
+            if (!System.IO.File.Exists(imagePath))
+            {
+                return NotFound();
+            }
+
+            var image = System.IO.File.OpenRead(imagePath);
+            return File(image, "image/png"); // Altere para o tipo correto se necessário
+        }
+
+        [HttpGet("ListImages")]
+        public IActionResult ListImages(string directoryPath)
+        {
+            if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
+            {
+                return NotFound("Directory not found");
+            }
+
+            // Lista todos os arquivos de imagem no diretório especificado
+            var imageFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(file => file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg"))
+                .Select(file => Path.GetFileName(file))
+                .ToList();
+
+            return Ok(imageFiles);
         }
     }
 

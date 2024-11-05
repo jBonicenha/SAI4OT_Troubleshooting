@@ -1,7 +1,8 @@
+using Microsoft.Extensions.FileProviders;
+
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
-Console.WriteLine($"API Key PROGRAM: {builder.Configuration["apiKey"]}");
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -26,8 +27,19 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Cria o diretório TemporaryImages se não existir
+var tempImagesPath = Path.Combine(Directory.GetCurrentDirectory(), "TemporaryImages");
+if (!Directory.Exists(tempImagesPath))
+{
+    Directory.CreateDirectory(tempImagesPath);
+}
+
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(tempImagesPath),
+    RequestPath = "/temp-images"
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -187,6 +187,7 @@ namespace SAI_OT_Apps.Server.Services
 
         public async Task<(string, List<Dictionary<string, string>>)> SAIDescriptionAnalysis(string routineCode)
         {
+            Console.WriteLine(routineCode);
 
             List<Dictionary<string, string>> rungs = new List<Dictionary<string, string>>();
             string preRungAnalysis = "";
@@ -417,8 +418,22 @@ namespace SAI_OT_Apps.Server.Services
             return null;
         }
 
-        public string ExtractRungsFromPdf(string pdfPath, string routine) //was void
+        public async Task<string> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory) //was string
         {
+            if (string.IsNullOrEmpty(pdfPath))
+            {
+                throw new ArgumentNullException(nameof(pdfPath), "O caminho do PDF não pode ser nulo ou vazio.");
+            }
+
+            if (!File.Exists(pdfPath))
+            {
+                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
+            }
+
+            if (!File.Exists(pdfPath))
+            {
+                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
+            }
             // Define the left margin threshold in points
             double leftMarginThreshold = 15; // 15 points from the left
 
@@ -430,7 +445,7 @@ namespace SAI_OT_Apps.Server.Services
             double dpi = 300.0;
             double scale = dpi / 72.0; // 1 point = 1/72 inch
 
-            string outputDirectory = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
+            //string outputDirectory = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
             _outputDirectory = outputDirectory.Replace("\\", "\\\\");//(Path.DirectorySeparatorChar, '\\');
 
             Directory.CreateDirectory(_outputDirectory);
@@ -446,282 +461,195 @@ namespace SAI_OT_Apps.Server.Services
 
                     bool continueProcessing = true;
 
-                    //while (continueProcessing)
-                    //{
-                        // Dictionary to hold routine names and their corresponding page indices
-                        Dictionary<string, List<int>> routinePages = new Dictionary<string, List<int>>();
 
-                        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
-                        {
-                            UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
-                            var words = page.GetWords().ToList();
+                    // Dictionary to hold routine names and their corresponding page indices
+                    Dictionary<string, List<int>> routinePages = new Dictionary<string, List<int>>();
 
-                            // Identify header words (x ~ 0 and highest y)
-                            var headerWords = words
-                                .Where(w => w.BoundingBox.Left <= 5) // Adjust threshold as needed
-                                .OrderByDescending(w => w.BoundingBox.Top)
-                                .ToList();
-
-                            string routineName = headerWords.FirstOrDefault()?.Text.Trim();
-
-                            if (string.IsNullOrEmpty(routineName))
-                            {
-                                routineName = "UnknownRoutine";
-                            }
-
-                            if (!routinePages.ContainsKey(routineName))
-                            {
-                                routinePages[routineName] = new List<int>();
-                            }
-                            routinePages[routineName].Add(pageIndex);
-                        }
-
-                        string selectedRoutine = routine;
-
-                        bool anyRungFound = false;
-
-                        List<int> pagesToProcess = routinePages[selectedRoutine];
-                        int totalPagesInRoutine = pagesToProcess.Count;
-
-                        for (int i = 0; i < totalPagesInRoutine; i++)
-                        {
-                            int pageIndex = pagesToProcess[i];
-                            UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
-                            var words = page.GetWords().ToList(); // Convert to List for indexing
-
-                            // Collect all rung occurrences on this page (only rungs within left margin)
-                            var allRungs = words
-                                .Where(w =>
-                                    (int.TryParse(w.Text.Trim(), out _) ||
-                                     w.Text.Trim().Equals("(End)", StringComparison.OrdinalIgnoreCase)) &&
-                                    w.BoundingBox.Left <= leftMarginThreshold)
-                                .OrderByDescending(w => w.BoundingBox.Top)
-                                .ToList();
-
-                            // Collect specific rung occurrences based on user input
-                            var specificRungs = allRungs.ToList();
-
-                            if (specificRungs.Count == 0)
-                            {
-                                //Console.WriteLine("No rungs found on this page.\n");
-                                continue;
-                            }
-
-                            // Render the page as image at specified DPI once per page
-                            ImageSharpImage pageImage = RenderPageAsImage(pdf, pageIndex, dpi);
-
-                            if (pageImage == null)
-                            {
-                                //Console.WriteLine($"Failed to render page {pageIndex + 1}\n");
-                                continue;
-                            }
-
-                            // Iterate through each specific rung occurrence
-                            foreach (var currentRung in specificRungs)
-                            {
-                                anyRungFound = true;
-
-                                double currentY0 = currentRung.BoundingBox.Top;
-
-                                // Find the index of the current rung in the allRungs list
-                                int currentIndex = allRungs.IndexOf(currentRung);
-
-                                if (currentIndex == -1)
-                                {
-                                    //Console.WriteLine("Error: Current rung not found in allRungs list. Skipping this rung.\n");
-                                    continue;
-                                }
-
-                                double cropTopPdf = currentY0 + fixedTopOffset;
-                                double cropBottomPdf;
-                                string nextRungInfo = "N/A";
-
-                                if (currentIndex + 1 < allRungs.Count)
-                                {
-                                    // There is a next rung on the same page
-                                    var nextRung = allRungs[currentIndex + 1];
-                                    double nextY0 = nextRung.BoundingBox.Top;
-
-                                    // Calculate cropBottomPdf as the maximum of:
-                                    // 1. fixedBottomOffset below the current rung
-                                    // 2. fixedTopOffset above the next rung
-                                    double desiredCropBottomPdf = currentY0 - fixedBottomOffset;
-                                    double nextRungCropBottomPdf = nextY0 + fixedTopOffset;
-
-                                    // Ensure that we don't crop beyond the next rung
-                                    cropBottomPdf = Math.Max(desiredCropBottomPdf, nextRungCropBottomPdf);
-
-                                    nextRungInfo = $"Next rung '{nextRung.Text}' at y0: {nextY0}";
-                                }
-                                else
-                                {
-                                    // No next rung found, use dynamic end offset
-                                    double lowestY0 = FindLowestYCoordinate(page);
-
-                                    // Subtract an additional 20 points from the lowestY0 for cropping (as per your deliberate change)
-                                    double newCropBottomPdf = lowestY0 - 20;
-
-                                    // Ensure that cropBottomPdf does not go below 10 points
-                                    cropBottomPdf = Math.Max(newCropBottomPdf, 10);
-
-                                    nextRungInfo = "No next rung found, using dynamic end offset based on the lowest character above the bottom margin and subtracting 20 points.";
-                                }
-
-                                // Clamp y-coordinates to page boundaries
-                                cropTopPdf = Math.Min(cropTopPdf, page.Height);
-                                cropBottomPdf = Math.Max(cropBottomPdf, 10);
-
-                                // Convert PDF coordinates to image pixels
-                                // PDF origin is bottom-left; Image origin is top-left
-                                double image_y0 = (page.Height - cropTopPdf) * scale; // Upper Y in image
-                                double image_y1 = (page.Height - cropBottomPdf) * scale; // Lower Y in image
-
-                                // Clamp image_y0 and image_y1 to image bounds
-                                image_y0 = Math.Max(0, Math.Min(pageImage.Height, image_y0));
-                                image_y1 = Math.Max(0, Math.Min(pageImage.Height, image_y1));
-
-                                // Ensure image_y0 < image_y1 for ImageSharp cropping
-                                if (image_y0 > image_y1)
-                                {
-                                    // Swap to maintain y0 < y1
-                                    double temp = image_y0;
-                                    image_y0 = image_y1;
-                                    image_y1 = temp;
-                                }
-
-                                // Calculate crop rectangle in pixels
-                                int cropX0 = 0;
-                                int cropY0 = (int)Math.Floor(image_y0);
-                                int cropWidth = pageImage.Width; // Full width
-                                int cropHeight = (int)Math.Ceiling(image_y1 - image_y0);
-
-                                // Ensure crop dimensions are within image bounds
-                                if (cropY0 + cropHeight > pageImage.Height)
-                                {
-                                    //Console.WriteLine($"Adjusting crop height from {cropHeight} to fit within image bounds.");
-                                    cropHeight = pageImage.Height - cropY0;
-
-                                    if (cropHeight <= 0)
-                                    {
-                                        //Console.WriteLine($"Adjusted crop height is invalid. Skipping cropping.\n");
-                                        continue;
-                                    }
-                                }
-
-                                // **[Step 2]** Assign the cropped image to the list instead of saving
-                                try
-                                {
-                                    var croppedImage = pageImage.Clone(ctx =>
-                                        ctx.Crop(new ImageSharpRectangle(cropX0, cropY0, cropWidth, cropHeight)));
-
-                                    // Generate timestamp
-                                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-                                    // Define the output filename with timestamp
-                                    string outputFilename = Path.Combine(_outputDirectory, $"rung_{currentRung.Text}_page_{pageIndex + 1}.png");
-
-                                    // Salva a imagem recortada, sobrescrevendo se necessário
-                                    using (var stream = new FileStream(outputFilename, FileMode.Create))
-                                    {
-                                        // Salva a imagem no arquivo
-                                        croppedImage.Save(stream, new PngEncoder());
-                                    }
-                                    // Save the cropped image
-                                    //croppedImage.Save(outputFilename);
-
-                                    // **[Step 3]** Add the cropped image to the list
-                                    croppedImages.Add(croppedImage);
-                                }
-                                catch (Exception ex)
-                                {
-                                    //Console.WriteLine($"Failed to process cropped image: {ex.Message}\n");
-                                }
-                            }
-                        }
-                    //}
-                    /*var croppedImages = new List<Image<Rgba32>>();
-
-                    for (int pageIndex = 0; pageIndex < pdf.PageCount; pageIndex++)
+                    for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
                     {
-                        using (var pageImage = RenderPageAsImage(pdf, pageIndex, 300))
+                        UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
+                        var words = page.GetWords().ToList();
+
+                        // Identify header words (x ~ 0 and highest y)
+                        var headerWords = words
+                            .Where(w => w.BoundingBox.Left <= 5) // Adjust threshold as needed
+                            .OrderByDescending(w => w.BoundingBox.Top)
+                            .ToList();
+
+                        string routineName = headerWords.FirstOrDefault()?.Text.Trim();
+
+                        if (string.IsNullOrEmpty(routineName))
                         {
-                            if (pageImage == null)
+                            routineName = "UnknownRoutine";
+                        }
+
+                        if (!routinePages.ContainsKey(routineName))
+                        {
+                            routinePages[routineName] = new List<int>();
+                        }
+                        routinePages[routineName].Add(pageIndex);
+                    }
+
+                    string selectedRoutine = routine;
+
+                    bool anyRungFound = false;
+
+                    List<int> pagesToProcess = routinePages[selectedRoutine];
+                    int totalPagesInRoutine = pagesToProcess.Count;
+
+                    for (int i = 0; i < totalPagesInRoutine; i++)
+                    {
+                        int pageIndex = pagesToProcess[i];
+                        UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
+                        var words = page.GetWords().ToList(); // Convert to List for indexing
+
+                        // Collect all rung occurrences on this page (only rungs within left margin)
+                        var allRungs = words
+                            .Where(w =>
+                                (int.TryParse(w.Text.Trim(), out _) ||
+                                    w.Text.Trim().Equals("(End)", StringComparison.OrdinalIgnoreCase)) &&
+                                w.BoundingBox.Left <= leftMarginThreshold)
+                            .OrderByDescending(w => w.BoundingBox.Top)
+                            .ToList();
+
+                        // Collect specific rung occurrences based on user input
+                        var specificRungs = allRungs.ToList();
+
+                        if (specificRungs.Count == 0)
+                        {
+                            //Console.WriteLine("No rungs found on this page.\n");
+                            continue;
+                        }
+
+                        // Render the page as image at specified DPI once per page
+                        ImageSharpImage pageImage = RenderPageAsImage(pdf, pageIndex, dpi);
+
+                        if (pageImage == null)
+                        {
+                            //Console.WriteLine($"Failed to render page {pageIndex + 1}\n");
+                            continue;
+                        }
+
+                        // Iterate through each specific rung occurrence
+                        foreach (var currentRung in specificRungs)
+                        {
+                            anyRungFound = true;
+
+                            double currentY0 = currentRung.BoundingBox.Top;
+
+                            // Find the index of the current rung in the allRungs list
+                            int currentIndex = allRungs.IndexOf(currentRung);
+
+                            if (currentIndex == -1)
                             {
+                                //Console.WriteLine("Error: Current rung not found in allRungs list. Skipping this rung.\n");
                                 continue;
                             }
 
-                            var page = document.GetPage(pageIndex + 1);
-                            var words = page.GetWords();
+                            double cropTopPdf = currentY0 + fixedTopOffset;
+                            double cropBottomPdf;
+                            string nextRungInfo = "N/A";
 
-                            bool anyRungFound = false;
-
-                            foreach (var currentRung in words.Where(w => w.Text.Contains(routine)))
+                            if (currentIndex + 1 < allRungs.Count)
                             {
-                                anyRungFound = true;
+                                // There is a next rung on the same page
+                                var nextRung = allRungs[currentIndex + 1];
+                                double nextY0 = nextRung.BoundingBox.Top;
 
-                                double cropTopPdf = currentRung.BoundingBox.TopLeft.Y;
-                                double cropBottomPdf = FindLowestYCoordinate(page);
+                                // Calculate cropBottomPdf as the maximum of:
+                                // 1. fixedBottomOffset below the current rung
+                                // 2. fixedTopOffset above the next rung
+                                double desiredCropBottomPdf = currentY0 - fixedBottomOffset;
+                                double nextRungCropBottomPdf = nextY0 + fixedTopOffset;
 
-                                double scale1 = pageImage.Height / page.Height;
+                                // Ensure that we don't crop beyond the next rung
+                                cropBottomPdf = Math.Max(desiredCropBottomPdf, nextRungCropBottomPdf);
 
-                                cropTopPdf = Math.Min(cropTopPdf, page.Height);
-                                cropBottomPdf = Math.Max(cropBottomPdf, 10);
+                                nextRungInfo = $"Next rung '{nextRung.Text}' at y0: {nextY0}";
+                            }
+                            else
+                            {
+                                // No next rung found, use dynamic end offset
+                                double lowestY0 = FindLowestYCoordinate(page);
 
-                                double image_y0 = (page.Height - cropTopPdf) * scale;
-                                double image_y1 = (page.Height - cropBottomPdf) * scale;
+                                // Subtract an additional 20 points from the lowestY0 for cropping (as per your deliberate change)
+                                double newCropBottomPdf = lowestY0 - 20;
 
-                                image_y0 = Math.Max(0, Math.Min(pageImage.Height, image_y0));
-                                image_y1 = Math.Max(0, Math.Min(pageImage.Height, image_y1));
+                                // Ensure that cropBottomPdf does not go below 10 points
+                                cropBottomPdf = Math.Max(newCropBottomPdf, 10);
 
-                                if (image_y0 > image_y1)
+                                nextRungInfo = "No next rung found, using dynamic end offset based on the lowest character above the bottom margin and subtracting 20 points.";
+                            }
+
+                            // Clamp y-coordinates to page boundaries
+                            cropTopPdf = Math.Min(cropTopPdf, page.Height);
+                            cropBottomPdf = Math.Max(cropBottomPdf, 10);
+
+                            // Convert PDF coordinates to image pixels
+                            // PDF origin is bottom-left; Image origin is top-left
+                            double image_y0 = (page.Height - cropTopPdf) * scale; // Upper Y in image
+                            double image_y1 = (page.Height - cropBottomPdf) * scale; // Lower Y in image
+
+                            // Clamp image_y0 and image_y1 to image bounds
+                            image_y0 = Math.Max(0, Math.Min(pageImage.Height, image_y0));
+                            image_y1 = Math.Max(0, Math.Min(pageImage.Height, image_y1));
+
+                            // Ensure image_y0 < image_y1 for ImageSharp cropping
+                            if (image_y0 > image_y1)
+                            {
+                                // Swap to maintain y0 < y1
+                                double temp = image_y0;
+                                image_y0 = image_y1;
+                                image_y1 = temp;
+                            }
+
+                            // Calculate crop rectangle in pixels
+                            int cropX0 = 0;
+                            int cropY0 = (int)Math.Floor(image_y0);
+                            int cropWidth = pageImage.Width; // Full width
+                            int cropHeight = (int)Math.Ceiling(image_y1 - image_y0);
+
+                            // Ensure crop dimensions are within image bounds
+                            if (cropY0 + cropHeight > pageImage.Height)
+                            {
+                                //Console.WriteLine($"Adjusting crop height from {cropHeight} to fit within image bounds.");
+                                cropHeight = pageImage.Height - cropY0;
+
+                                if (cropHeight <= 0)
                                 {
-                                    double temp = image_y0;
-                                    image_y0 = image_y1;
-                                    image_y1 = temp;
-                                }
-
-                                int cropX0 = 0;
-                                int cropY0 = (int)Math.Floor(image_y0);
-                                int cropWidth = pageImage.Width;
-                                int cropHeight = (int)Math.Ceiling(image_y1 - image_y0);
-
-                                if (cropY0 + cropHeight > pageImage.Height)
-                                {
-                                    cropHeight = pageImage.Height - cropY0;
-                                    if (cropHeight <= 0)
-                                    {
-                                        continue;
-                                    }
-                                }
-
-                                try
-                                {
-                                    var croppedImage = pageImage.Clone(ctx =>
-                                        ctx.Crop(new Rectangle(cropX0, cropY0, cropWidth, cropHeight)));
-
-                                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                                    string outputFilename = Path.Combine(outputDirectory, $"rung_{currentRung.Text}_page_{pageIndex + 1}_{timestamp}.png");
-
-                                    croppedImage.Save(outputFilename);
-                                    croppedImages.Add(croppedImage);
-                                }
-                                catch
-                                {
+                                    //Console.WriteLine($"Adjusted crop height is invalid. Skipping cropping.\n");
                                     continue;
                                 }
                             }
 
-                            if (!anyRungFound)
+                            // **[Step 2]** Assign the cropped image to the list instead of saving
+                            try
                             {
-                                continue;
+                                var croppedImage = pageImage.Clone(ctx =>
+                                    ctx.Crop(new ImageSharpRectangle(cropX0, cropY0, cropWidth, cropHeight)));
+
+                                // Generate timestamp
+                                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+                                // Define the output filename with timestamp
+                                string outputFilename = Path.Combine(_outputDirectory, $"{routine}_rung_{currentRung.Text}.png");//_page_{pageIndex + 1}.png");
+
+                                // Salva a imagem recortada, sobrescrevendo se necessário
+                                using (var stream = new FileStream(outputFilename, FileMode.Create))
+                                {
+                                    // Salva a imagem no arquivo
+                                    croppedImage.Save(stream, new PngEncoder());
+                                }
+
+                                // **[Step 3]** Add the cropped image to the list
+                                croppedImages.Add(croppedImage);
+                            }
+                            catch (Exception ex)
+                            {
+                                //Console.WriteLine($"Failed to process cropped image: {ex.Message}\n");
                             }
                         }
                     }
-
-                    foreach (var img in croppedImages)
-                    {
-                        img.Dispose();
-                    }*/
                 }
 
                 return _outputDirectory;

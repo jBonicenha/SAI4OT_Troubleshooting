@@ -30,7 +30,7 @@ export class CodeAuditorComponent implements OnInit {
   profileForm: FormGroup = new FormGroup({
     folderPath: new FormControl(null),
     selectedOption: new FormControl('Text'),
-    codeAuditorOption: new FormControl('Text'),
+    codeAuditorOption: new FormControl('Text')
   });
 
   outputFormats: string[] = [];
@@ -57,7 +57,20 @@ export class CodeAuditorComponent implements OnInit {
   OptionSelected: number = 0;
   UserSkipComment: boolean = true;
   logicImagePath: string = '';
-  constructor(private http: HttpClient, private router: Router, private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
+  temporaryImages: string[] = [];
+  currentImageIndex: number = 0;
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.profileForm = this.fb.group({
+      folderPath: new FormControl(null),
+      selectedOption: new FormControl('Text'),
+      codeAuditorOption: new FormControl('Text')
+    });
+  }
 
   get selectedOptions() {
     return this.profileForm.get('selectedOption')?.value;
@@ -71,7 +84,7 @@ export class CodeAuditorComponent implements OnInit {
 
   }
 
-  //Main Request - Description Analysis
+  /*//Main Request - Description Analysis
   async auditDescriptionMain(): Promise<void> {
     try
     {
@@ -100,6 +113,51 @@ export class CodeAuditorComponent implements OnInit {
     {
       console.error('Error in auditDescriptionMain:', error);
       alert('An error occurred during the audit process.');
+    }
+  }*/
+
+  //Main Request - Description Analysis
+  async auditDescriptionMain(): Promise<void> {
+    try {
+      this.progress = 0;
+      this.loading = true;
+      this.SAIPreRungAnalysis = '';
+      this.RoutineDescriptionRevised = [];
+
+      // Obter os valores do FORM
+      this.routineName = this.profileForm.get('selectedOption')?.value;
+
+      // Garantir que PLCFilePath não esteja vazio ou nulo
+      if (!this.PLCFilePath) {
+        throw new Error('PLC file path is required.');
+      }
+
+      // Await the result of GetRoutineByName
+      await this.GetRoutineByName(this.PLCFilePath, this.routineName);
+
+      // Processar a análise da descrição após a extração e carregamento de imagens
+      //await this.SAIDescriptionAnalysis(this.routineCode);
+
+      // Chamar a função para extrair rungs do PDF e obter o caminho da pasta temporária
+      const outputDirectory = await this.extractRungsFromPdf();
+
+      // Carregar a primeira imagem da pasta temporária
+      if (this.temporaryImages && this.temporaryImages.length > 0) {
+        //this.logicImagePath = this.temporaryImages[this.currentImageIndex];
+        this.logicImagePath = `${outputDirectory}/${this.temporaryImages[this.currentImageIndex]}`;
+      } else {
+        throw new Error('No images found in temporary directory.');
+      }
+
+      // Processar a análise da descrição após a extração e carregamento de imagens
+      await this.SAIDescriptionAnalysis(this.routineCode);
+
+      console.log('logicImagePath:', this.logicImagePath);
+    } catch (error) {
+      console.error('Error in auditDescriptionMain:', error);
+      alert('An error occurred during the audit process.');
+    } finally {
+      this.loading = false;
     }
   }
 
@@ -291,6 +349,106 @@ export class CodeAuditorComponent implements OnInit {
         }
       );
     });
+  }
+
+  async extractRungsFromPdf(): Promise<string> {
+    this.loading = true;
+    try {
+      /*// Monta a URL da API com os parâmetros PLCFilePath e routineName
+      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(this.PLCFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
+
+      // Faz a requisição ao backend para extrair rungs e obter o diretório de saída
+      const outputDirectory: string = await lastValueFrom(this.http.post<string>(url, null));
+
+      // Obtém as imagens da pasta temporária
+      await this.loadTemporaryImages(outputDirectory);*/
+      // Modifique o caminho do arquivo para terminar em .pdf
+      const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
+      console.log("Caminho PDF: ", pdfFilePath);
+
+      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(pdfFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
+      //const url = `https://localhost:7070/extract-rungs?plcFilePath=C:/SAI/SAICodeAuditor/PLC_M45_1525_Dev.pdf&routineName=Alarm_Main`;
+
+      /*// Parâmetros passados no corpo da requisição com o caminho atualizado
+      const requestBody = {
+        plcFilePath: pdfFilePath,
+        routineName: this.routineName
+      };*/
+
+      // Log para verificar o URL
+      console.log("URL da requisição: ", url);
+
+      // Envia a requisição GET com os parâmetros no corpo
+      //const outputDirectory: string = await lastValueFrom(this.http.get<string>(url));
+      //console.log("output Directory: ", outputDirectory);
+      /*this.http.get<{ outputDirectory: string }>(url).subscribe(
+        response => {
+          console.log('Output Directory:', response.outputDirectory);
+          // Lógica para lidar com as imagens...
+        },
+        error => {
+          console.error('Error extracting rungs from PDF:', error);
+        }
+      );*/
+
+      // Envia a requisição GET com os parâmetros e aguarda a resposta com lastValueFrom
+      const response = await lastValueFrom(this.http.get<{ outputDirectory: string }>(url));
+      console.log('Output Directory:', response.outputDirectory);
+
+      // Carregar as imagens da pasta temporária
+      if (response.outputDirectory) {
+        await this.loadTemporaryImages(response.outputDirectory);
+        return response.outputDirectory;
+      } else {
+        alert('Nenhuma imagem encontrada na pasta temporária.');
+        return '';
+      }
+    } catch (error) {
+      console.error('Error extracting rungs from PDF:', error);
+      alert('Failed to extract rungs from PDF');
+      return '';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private async loadTemporaryImages(directoryPath: string): Promise<void> {
+    // Endpoint para listar as imagens da pasta temporária
+    const listUrl = `https://localhost:7070/ListImages?directoryPath=${encodeURIComponent(directoryPath)}`;
+    try {
+      const images = await lastValueFrom(this.http.get<string[]>(listUrl));
+      this.temporaryImages = images;
+      this.currentImageIndex = 0;
+      this.updateCurrentImagePath();
+    } catch (error) {
+      console.error('Failed to load temporary images:', error);
+      alert('Failed to load images from temporary directory');
+    }
+  }
+
+  private updateCurrentImagePath(): void {
+    if (this.temporaryImages.length > 0 && this.currentImageIndex < this.temporaryImages.length) {
+      this.logicImagePath = this.temporaryImages[this.currentImageIndex];
+      this.cdr.detectChanges();
+    } else {
+      this.logicImagePath = '';
+    }
+  }
+
+  nextImage(): void {
+    if (this.currentImageIndex < this.temporaryImages.length - 1) {
+      this.currentImageIndex++;
+      this.updateCurrentImagePath();
+    } else {
+      alert('No more images to display.');
+    }
+  }
+
+  previousImage(): void {
+    if (this.currentImageIndex > 0) {
+      this.currentImageIndex--;
+      this.updateCurrentImagePath();
+    }
   }
 
 }
