@@ -1,3 +1,4 @@
+<!-- HTML -->
 <div class="container-fluid px-5">
   <div class="row sticky-top py-3">
     <div class="d-flex justify-content-between align-items-center">
@@ -28,29 +29,36 @@
     </form>
   </div>
 
-  <div class="row mt-4" *ngIf="templateList">
+  <div class="row mt-4" *ngIf="templateList.length > 0">
     <div class="d-flex justify-content-between align-items-center">
-      <h4 class="my-0">Network IP table</h4>
+      <h4 class="my-0">Template table</h4>
     </div>
     <div class="row info-description mb-4">
-      This table displays all the equipment found in the backup files and illustrates their interrelationships. Click on any row to view the related equipment.
+      This table displays all templates used in the current screen.
     </div>
     <table class="table table-striped">
       <thead>
         <tr>
           <th scope="col">Index</th>
           <th scope="col">Name</th>
-          <th scope="col">Path</th>
+          <th scope="col">TemplatePath</th>
+          <th scope="col">Backup</th>
           <th scope="col">Converted</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let templateDetail of templateList">
-          <th scope="row">{{ templateDetail.Index }}</th>
-          <td>{{ templateDetail.Name }}</td>
-          <td>{{ templateDetail.Path }}</td>
-          <td>{{ templateDetail.Converted }}</td>
+          <th scope="row">{{ templateDetail.index }}</th>
+          <td>{{ templateDetail.name }}</td>
+          <td>{{ templateDetail.templatePath }}</td>
+          <td>
+            <span [class.circle]="true" [class.bg-success]="templateDetail.screenExists" [class.bg-danger]="!templateDetail.screenExists"></span>
+          </td>
+          <td>
+            <span [class.circle]="true" [class.bg-success]="templateDetail.screenConverted" [class.bg-danger]="!templateDetail.screenConverted"></span>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
+</div>

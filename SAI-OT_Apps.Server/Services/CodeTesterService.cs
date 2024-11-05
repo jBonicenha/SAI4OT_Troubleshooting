@@ -3,6 +3,7 @@ using OfficeOpenXml;
 using Opc.Ua.Client;
 using Opc.Ua;
 using RestSharp;
+using System.Text.Json;
 
 
 
@@ -40,7 +41,8 @@ namespace SAI_OT_Apps.Server.Services
         // Função para criar a sessão OPC
         private static async Task<Session> CreateSession(ApplicationConfiguration config)
         {
-            var endpointURL = "opc.tcp://127.0.0.1:49320"; // URL do servidor OPC
+            //var endpointURL = "opc.tcp://127.0.0.1:49320"; // URL do servidor OPC - PC Guilherme
+            var endpointURL = "opc.tcp://192.168.226.128:4990/SAI_PLC_UAServer"; //PC Julimar
             var selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointURL, useSecurity: false);
             var endpointConfiguration = EndpointConfiguration.Create(config);
             var endpoint = new ConfiguredEndpoint(null, selectedEndpoint, endpointConfiguration);
@@ -90,67 +92,91 @@ namespace SAI_OT_Apps.Server.Services
                         string tag = worksheet.Cells[row, 2].Text; // TAG
                         string value = worksheet.Cells[row, 3].Text.ToUpper(); // VALUE
 
-                        // Verifica se a TAG existe no OPC Server
-                        NodeId nodeId = new NodeId($"ns=2;s=Channel1.CodeTester.{tag}");
-                        DataValue opcValue;
+                        if (function != "" || tag != "" || value != "")
+                        {
 
-                        try
-                        {
-                            opcValue = session.ReadValue(nodeId); // Tenta ler o valor da TAG no OPC Server
-                        }
-                        catch (Exception ex)
-                        {
-                            // Se houver erro ao ler a TAG, registra o erro completo no resultado
-                            tagsTested.Add(new TagTested
-                            {
-                                Function = function,
-                                Tag = tag,
-                                Value = value,
-                                Result = $"Erro: {ex.Message}" // Inclui a mensagem completa do erro
-                            });
-                            continue; // Pule para a próxima iteração
-                        }
+                            // Verifica se a TAG existe no OPC Server
+                            //NodeId nodeId = new NodeId($"ns=2;s=Channel1.CodeTester.{tag}"); //PC Guilherme
+                            NodeId nodeId = new NodeId($"ns=2;s=::[SAI_APP]Program:MainProgram.{tag}"); //PC Julimar
+                            DataValue opcValue;
 
-                        // Validação e lógica de SETs e CHECKs
-                        if (function == "SET")
-                        {
-                            // Valida se a TAG no OPC precisa ser atualizada
-                            if (opcValue.Value != null && opcValue.Value.ToString().ToUpper() != value)
+                            try
                             {
-                                await UpdateTagValueInOPC(session, nodeId, value); // Atualiza o valor da TAG no OPC
+                                opcValue = session.ReadValue(nodeId); // Tenta ler o valor da TAG no OPC Server
+                            }
+                            catch (Exception ex)
+                            {
+                                // Se houver erro ao ler a TAG, registra o erro completo no resultado
                                 tagsTested.Add(new TagTested
                                 {
                                     Function = function,
                                     Tag = tag,
                                     Value = value,
-                                    Result = "UPDATED"
+                                    Result = $"Error: {ex.Message}" // Inclui a mensagem completa do erro
                                 });
+                                continue; // Pule para a próxima iteração
                             }
-                            else
+
+                            // Validação e lógica de SETs e CHECKs
+                            if (function == "SET")
                             {
-                                tagsTested.Add(new TagTested
+                                // Valida se a TAG no OPC precisa ser atualizada
+                                if (opcValue.Value != null && opcValue.Value.ToString().ToUpper() != value)
                                 {
-                                    Function = function,
+                                    await UpdateTagValueInOPC(session, nodeId, value); //Update Tag in Value in OPC
+                                    await Task.Delay(500); //Wait for the PLC response
+                                    tagsTested.Add(new TagTested
+                                    {
+                                        Function = function,
+                                        Tag = tag,
+                                        Value = value,
+                                        Result = "UPDATED"
+                                    });
+                                }
+                                else
+                                {
+                                    tagsTested.Add(new TagTested
+                                    {
+                                        Function = function,
+                                        Tag = tag,
+                                        Value = value,
+                                        Result = "OK"
+                                    });
+                                }
+                            }
+                            else if (function == "CHECK")
+                            {
+                                // Para o CHECK, cria um CodeTest e associa os SETs anteriores
+                                string checkResult = "";
+                                if(opcValue.StatusCode == Opc.Ua.StatusCodes.Good)
+                                {
+                                    bool hasError = tagsTested.Any(tagTested => tagTested.Result.Contains("Error"));
+                                    if (hasError)
+                                    {
+                                        checkResult = "Bad";
+                                    }
+                                    else
+                                    {
+                                        checkResult = opcValue.Value.ToString().ToUpper();
+                                    }                                    
+                                }
+                                else
+                                {
+                                    checkResult = $"Error: {opcValue.StatusCode}";
+                                }
+
+                                currentTest = new CodeTest
+                                {
+                                    Function = "CHECK",
                                     Tag = tag,
                                     Value = value,
-                                    Result = "OK"
-                                });
-                            }
-                        }
-                        else if (function == "CHECK")
-                        {
-                            // Para o CHECK, cria um CodeTest e associa os SETs anteriores
-                            currentTest = new CodeTest
-                            {
-                                Function = "CHECK",
-                                Tag = tag,
-                                Value = opcValue.Value?.ToString().ToUpper() ?? "UNKNOWN", // Valor lido do OPC
-                                Result = opcValue.StatusCode == Opc.Ua.StatusCodes.Good ? "TRUE" : $"Erro: {opcValue.StatusCode}", // Ajuste na saída do result
-                                TagsTested = new List<TagTested>(tagsTested) // Copia os SETs associados
-                            };
+                                    Result = checkResult,
+                                    TagsTested = new List<TagTested>(tagsTested) // Copia os SETs associados
+                                };
 
-                            codeTests.Add(currentTest); // Adiciona o CodeTest ao JSON final
-                            tagsTested.Clear(); // Limpa a lista de SETs para o próximo bloco
+                                codeTests.Add(currentTest); // Adiciona o CodeTest ao JSON final
+                                tagsTested.Clear(); // Limpa a lista de SETs para o próximo bloco
+                            }
                         }
                     }
 
@@ -179,10 +205,13 @@ namespace SAI_OT_Apps.Server.Services
 
         public async Task<string> SAICodeTester(string jsonFromSpreadsheet)
         {
+            //string json = JsonSerializer.Serialize(jsonFromSpreadsheet, new JsonSerializerOptions { WriteIndented = true });
+
             var apiKey = _apiKey;
 
             var client = new RestClient("https://sai-library.saiapplications.com");
-            var request = new RestRequest("api/templates/6716a919a111aae3bd5eb216/execute", Method.Post)
+            var request = new RestRequest("api/templates/672a48e4cb38f19ccc7841b2/execute", Method.Post)
+                //6717d24cd962ca21467d26a8
                 .AddJsonBody(new
                 {
                     inputs = new Dictionary<string, string>

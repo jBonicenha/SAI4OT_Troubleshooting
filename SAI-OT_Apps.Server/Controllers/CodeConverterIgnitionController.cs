@@ -20,7 +20,9 @@ namespace SAI_OT_Apps.Server.Controllers
             public int Index { get; set; }
             public string Name { get; set; }
             public string TemplatePath { get; set; }
-            public bool Converted { get; set; }
+            public bool screenExists { get; set; }
+            public bool screenConverted { get; set; }
+
         }
 
         [HttpPost("ExtractTemplatesFromFile")]
@@ -29,7 +31,7 @@ namespace SAI_OT_Apps.Server.Controllers
             try
             {
                 var result = await Task.Run(() => _codeConverterIgnitionService.ExtractTemplatesFromFile(projectPath));
-                var templateDtos = result.Select(t => new TemplateDto { Index = t.Index, Name = t.Name, TemplatePath = t.TemplatePath, Converted = t.Converted }).ToList();
+                var templateDtos = result.Select(t => new TemplateDto { Index = t.Index, Name = t.Name, TemplatePath = t.TemplatePath, screenExists = t.screenExists, screenConverted = t.screenConverted }).ToList();
                 return Ok(templateDtos);
             }
             catch (Exception ex)

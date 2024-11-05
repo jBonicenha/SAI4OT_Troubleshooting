@@ -7,3 +7,23 @@
   color: #666;
   margin: 0;
 }
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05); /* Default Bootstrap striped color */
+}
+
+/* CSS */
+.circle {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.bg-success {
+  background-color: forestgreen;
+}
+
+.bg-danger {
+  background-color: red;
+}

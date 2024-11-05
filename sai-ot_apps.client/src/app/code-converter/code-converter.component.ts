@@ -2,19 +2,20 @@ import { Component, OnInit, NgModule } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { firstValueFrom, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 
 export interface Template {
-  Index: number;
-  Name: string;
-  Path: string;
-  Converted: boolean;
+  index: number;
+  name: string;
+  templatePath: string;
+  screenExists: boolean;
+  screenConverted: boolean
 }
 
 @Component({
   selector: 'app-code-converter',
   templateUrl: './code-converter.component.html',
-  styleUrl: './code-converter.component.scss'
+  styleUrls: ['./code-converter.component.scss']
 })
 
 export class CodeConverterComponent implements OnInit {
@@ -22,38 +23,36 @@ export class CodeConverterComponent implements OnInit {
   loading: boolean = false;
   results: string[] = [];
   generateScreenResult: string = '';
-  //templateList: string = '';
   localFolderPath: string = '';
   templateList: Template[] = [];
   
 
   profileForm: FormGroup = new FormGroup({
-    folderPath: new FormControl(null)
+    folderPath: new FormControl(null, Validators.required)
   });
-
   constructor(private http: HttpClient, private router: Router) { }
 
   ngOnInit(): void {
   }
 
-
-  generateTemplateList() {
+  async generateTemplateList() {
     this.localFolderPath = this.profileForm.get('folderPath')?.value;
-    this.ExtractTemplatesFromFile(this.localFolderPath);
-
+    this.templateList = [];
+    this.loading = true;
+    await this.extractTemplatesFromFile(this.localFolderPath);
+    this.loading = false;
   }
 
-
-  async ExtractTemplatesFromFile(projectPath: string) {
+  async extractTemplatesFromFile(projectPath: string): Promise<void> {
     const url = `https://localhost:7070/ExtractTemplatesFromFile?projectPath=${encodeURIComponent(projectPath)}`;
     try {
-      const data = await lastValueFrom(this.http.post<Template[]>(url, null, { responseType: 'text' as 'json' }));
+      const data = await lastValueFrom(this.http.post<Template[]>(url, null));
       // Handle the response data as needed
-      console.log('Response:', data);
       this.templateList = data;
+      console.log('Response:', this.templateList);
     } catch (error) {
       console.error(error);
-      alert('Failed to fetch postCodeConverterIgnitionTemplateList');
+      alert('Failed to fetch extractTemplatesFromFile');
     }
   }
 

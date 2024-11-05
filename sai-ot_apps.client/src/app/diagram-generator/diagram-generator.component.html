@@ -74,18 +74,18 @@
       <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading diagram...</span>
     </div>
     <div class="row mt-4" *ngIf="diagramXMLresult">
-        <div class="d-flex justify-content-between align-items-center">
-          <h4 class="my-0">Network Diagram</h4>
-        </div>
-        <div class="row info-description mb-4" style="display: inline-block; white-space: nowrap;">
-          This diagram illustrates the connections among all related equipment. For a clearer view, please click to
-          <a (click)="openFullScreen()" class="text-primary" style="cursor: pointer;">Open Fullscreen</a>&nbsp;button.
-        </div>
-        <div class="diagram-container" #diagramContainer>
-          <div #mxgraphScriptsContainer id="mxgraph-scripts-container"></div>
-          <div #container id="mxgraph-diagram-container"></div>
-        </div>
-</div>
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="my-0">Network Diagram</h4>
+      </div>
+      <div class="row info-description mb-4" style="display: inline-block; white-space: nowrap;">
+        This diagram illustrates the connections among all related equipment. For a clearer view, please click to
+        <a (click)="openFullScreen()" class="text-primary" style="cursor: pointer;">Open Fullscreen</a>&nbsp;button.
+      </div>
+      <div class="diagram-container" #diagramContainer>
+        <div #mxgraphScriptsContainer id="mxgraph-scripts-container"></div>
+        <div #container id="mxgraph-diagram-container"></div>
+      </div>
+    </div>
 
   </div>
 </div>

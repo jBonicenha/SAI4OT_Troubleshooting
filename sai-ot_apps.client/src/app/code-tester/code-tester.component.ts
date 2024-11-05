@@ -28,6 +28,7 @@ export class CodeTesterComponent {
 
   generateCodeTester() {
     if (this.file) {
+      this.SAICodeTesterResult = '';
       this.loading = true; // Inicia o carregamento
       const url = `https://localhost:7070/api/CodeTester/validate-and-generate`;
       const formData = new FormData();
@@ -39,6 +40,11 @@ export class CodeTesterComponent {
           this.SAICodeTesterResult = data || '';
           this.loading = false;
           this.profileForm.reset(); // Limpa o formulário após o sucesso, se necessário
+          this.file = null; // Reseta a variável de arquivo
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = ''; // Reseta o input de arquivo
+          }
         },
         (error) => {
           console.error('Error occurred:', error);
