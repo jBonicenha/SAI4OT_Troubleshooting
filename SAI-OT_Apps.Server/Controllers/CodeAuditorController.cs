@@ -107,7 +107,7 @@ namespace SAI_OT_Apps.Server.Controllers
 
         [HttpPost("AuditUDTAnalysis")]
         public async Task<IActionResult> AuditUDTCode([FromQuery] string PLCfilePath)
-        {            
+        {
             try
             {
                 var result = _codeAuditorServiceUDT.AuditUDTCode(PLCfilePath);
@@ -128,7 +128,7 @@ namespace SAI_OT_Apps.Server.Controllers
             string outputDirectory = _codeAuditorServiceUDT.ExtractRungsFromPdf(request.PdfPath, request.Routine);
             return Ok(outputDirectory); // Retorna o caminho como resposta, se necessário
         }*/
-        [HttpGet("extract-rungs")]
+        /*[HttpGet("extract-rungs")]
         public async Task<IActionResult> ExtractRungsFromPdf(string plcFilePath, string routineName)
         {
             Console.WriteLine($"Recebido plcFilePath: {plcFilePath}");
@@ -146,9 +146,9 @@ namespace SAI_OT_Apps.Server.Controllers
             //string temporaryPathUrl = $"/temp-images/";//{uniqueId}";
             //return Ok(new { temporaryPath = temporaryPathUrl });
             return Ok( new { outputDirectory });
-        }
+        }*/
 
-        [HttpDelete("delete-output-directory")]
+        /*[HttpDelete("delete-output-directory")]
         public IActionResult DeleteOutputDirectory([FromQuery] string outputDirectory)
         {
             try
@@ -160,9 +160,9 @@ namespace SAI_OT_Apps.Server.Controllers
             {
                 return StatusCode(500, $"Erro ao excluir o diretório: {ex.Message}");
             }
-        }
+        }*/
 
-        [HttpGet("get-image/{fileName}")]
+        /*[HttpGet("get-image/{fileName}")]
         public IActionResult GetImage(string fileName)
         {
             string imagePath = Path.Combine(Path.GetTempPath(), "ExtractedRungs", fileName);
@@ -191,7 +191,98 @@ namespace SAI_OT_Apps.Server.Controllers
                 .ToList();
 
             return Ok(imageFiles);
+        }*/
+
+        [HttpGet("extract-rungs")]
+        public async Task<IActionResult> ExtractRungsFromPdf(string plcFilePath, string routineName)
+        {
+            Console.WriteLine($"Recebido plcFilePath: {plcFilePath}");
+            Console.WriteLine($"Recebido routineName: {routineName}");
+
+            //string outputDirectory = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
+            //string outputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "ExtractedRungs");
+            string outputDirectory = Directory.GetCurrentDirectory();
+            Directory.CreateDirectory(outputDirectory);
+
+            // Chame a Service para processar a extração, passando o outputDirectory
+            var imagePaths = await _codeAuditorServiceUDT.ExtractRungsFromPdf(plcFilePath, routineName, outputDirectory);
+
+            // Crie URLs das imagens acessíveis via HTTP
+            var imageUrls = imagePaths.Select(fileName => Url.Action("GetImage", new { fileName })).ToList();
+
+            return Ok(new { imageUrls });
         }
+
+        /*[HttpGet("get-image/{fileName}")]
+        public IActionResult GetImage(string fileName)
+        {
+            string imagePath = Path.Combine(Path.GetTempPath(), "ExtractedRungs", fileName);
+
+            if (!System.IO.File.Exists(imagePath))
+            {
+                return NotFound();
+            }
+
+            var image = System.IO.File.OpenRead(imagePath);
+            return File(image, "image/png");
+        }*/
+
+        [HttpGet("ListImages")]
+        public IActionResult ListImages()
+        {
+            string directoryPath = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
+            if (!Directory.Exists(directoryPath))
+            {
+                return NotFound("Directory not found");
+            }
+
+            // Lista todos os arquivos de imagem no diretório especificado
+            var imageFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(file => file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg"))
+                .Select(file => Path.GetFileName(file))
+                .ToList();
+
+            return Ok(imageFiles);
+        }
+
+        [HttpGet("GetImage")]
+        public IActionResult GetImage(string fileName)
+        {
+            // Pega o diretório atual do projeto
+            string projectDirectory = Directory.GetCurrentDirectory();
+
+            //string filePath = Path.Combine(Path.GetTempPath(), "ExtractedRungs", fileName);
+            string filePath = Path.Combine(projectDirectory, fileName);
+            Console.WriteLine("GetImage filepath: " + filePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Image not found.");
+            }
+
+            byte[] imageBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(imageBytes, "image/png");  // Ajuste o tipo de conteúdo conforme o formato da imagem
+        }
+
+        [HttpDelete("delete-images")]
+        public IActionResult DeleteImages()
+        {
+            try
+            {
+                // Pega o diretório atual do projeto
+                string projectDirectory = Directory.GetCurrentDirectory();
+
+                // Chama a função para excluir as imagens, sem excluir o diretório
+                _codeAuditorServiceUDT.DeleteImages(projectDirectory);
+                return Ok("Imagens excluídas com sucesso.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro ao excluir as imagens: {ex.Message}");
+            }
+        }
+
+
     }
 
 }

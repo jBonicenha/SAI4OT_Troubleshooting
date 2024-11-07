@@ -50,8 +50,8 @@ namespace SAI_OT_Apps.Server.Services
         public List<string> RoutinesList(string PLCfilePath)
         {
             List<string> routineNames = new List<string>();
-            try 
-            { 
+            try
+            {
                 if (string.IsNullOrEmpty(PLCfilePath))
                 {
                     throw new ArgumentException("File path cannot be null or empty.", nameof(PLCfilePath));
@@ -88,7 +88,7 @@ namespace SAI_OT_Apps.Server.Services
                 // Optionally, log the exception or rethrow it
             }
 
-                return routineNames;
+            return routineNames;
         }
 
         public string GetRoutineByName(string PLCfilePath, string routineName)
@@ -214,7 +214,7 @@ namespace SAI_OT_Apps.Server.Services
             else
             {
                 throw new Exception("API SAINetworkAnalysis failed!");
-            }           
+            }
 
 
         }
@@ -313,7 +313,7 @@ namespace SAI_OT_Apps.Server.Services
                 if (matchStandard.Success)
                 {
                     string StandardUDTItemName = matchStandard.Groups[1].Value;
-                    if(StandardUDTItemName == "IHM_EQP" || StandardUDTItemName == "IHM_CMD")
+                    if (StandardUDTItemName == "IHM_EQP" || StandardUDTItemName == "IHM_CMD")
                     {
                         //Run the UDT List in the Selected Program
                         foreach (string ProgramUDTItem in ProgramUDTList)
@@ -418,7 +418,7 @@ namespace SAI_OT_Apps.Server.Services
             return null;
         }
 
-        public async Task<string> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory) //was string
+        /*public async Task<string> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory) //was string
         {
             if (string.IsNullOrEmpty(pdfPath))
             {
@@ -662,7 +662,200 @@ namespace SAI_OT_Apps.Server.Services
             {
                 throw new Exception($"An error occurred: {ex.Message}");
             }
+        }*/
+
+        public async Task<List<string>> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory)
+        {
+            if (string.IsNullOrEmpty(pdfPath))
+            {
+                throw new ArgumentNullException(nameof(pdfPath), "O caminho do PDF não pode ser nulo ou vazio.");
+            }
+
+            if (!File.Exists(pdfPath))
+            {
+                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
+            }
+
+            // Define a margem esquerda para detectar os rungs
+            double leftMarginThreshold = 15; // 15 pontos da esquerda
+
+            // Define deslocamentos fixos
+            double fixedTopOffset = 20;      // 20 pontos acima do rung
+            double fixedBottomOffset = 500;  // 500 pontos abaixo do rung
+
+            // DPI para renderização da imagem
+            double dpi = 300.0;
+            double scale = dpi / 72.0; // 1 ponto = 1/72 polegada
+
+            _outputDirectory = outputDirectory.Replace("\\", "\\\\"); // Ajusta o diretório de saída
+
+            Directory.CreateDirectory(_outputDirectory);
+
+            List<string> imagePaths = new List<string>(); // Armazenar os caminhos das imagens salvas
+
+            try
+            {
+                using (var pdf = PdfiumPdfDocument.Load(pdfPath))
+                using (var document = PdfPigDocument.Open(pdfPath))
+                {
+                    int totalPages = document.NumberOfPages;
+
+                    // Dicionário para armazenar páginas correspondentes a cada rotina
+                    Dictionary<string, List<int>> routinePages = new Dictionary<string, List<int>>();
+
+                    // Loop pelas páginas do PDF para localizar as rotinas
+                    for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
+                    {
+                        var page = document.GetPage(pageIndex + 1);
+                        var words = page.GetWords().ToList();
+
+                        // Identificar palavras do cabeçalho
+                        var headerWords = words
+                            .Where(w => w.BoundingBox.Left <= 5)
+                            .OrderByDescending(w => w.BoundingBox.Top)
+                            .ToList();
+
+                        string routineName = headerWords.FirstOrDefault()?.Text.Trim();
+
+                        if (string.IsNullOrEmpty(routineName))
+                        {
+                            routineName = "UnknownRoutine";
+                        }
+
+                        if (!routinePages.ContainsKey(routineName))
+                        {
+                            routinePages[routineName] = new List<int>();
+                        }
+                        routinePages[routineName].Add(pageIndex);
+                    }
+
+                    // Filtra páginas da rotina selecionada
+                    string selectedRoutine = routine;
+                    List<int> pagesToProcess = routinePages[selectedRoutine];
+
+                    // Loop pelas páginas da rotina selecionada
+                    foreach (var pageIndex in pagesToProcess)
+                    {
+                        var page = document.GetPage(pageIndex + 1);
+                        var words = page.GetWords().ToList();
+
+                        // Filtra todos os rungs na margem esquerda
+                        var allRungs = words
+                            .Where(w =>
+                                (int.TryParse(w.Text.Trim(), out _) ||
+                                 w.Text.Trim().Equals("(End)", StringComparison.OrdinalIgnoreCase)) &&
+                                w.BoundingBox.Left <= leftMarginThreshold)
+                            .OrderByDescending(w => w.BoundingBox.Top)
+                            .ToList();
+
+                        // Se não houver rungs na página, continua para a próxima página
+                        if (allRungs.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        // Renderiza a página como imagem
+                        ImageSharpImage pageImage = RenderPageAsImage(pdf, pageIndex, dpi);
+
+                        if (pageImage == null)
+                        {
+                            continue;
+                        }
+
+                        // Processa cada rung encontrado
+                        foreach (var currentRung in allRungs)
+                        {
+                            double currentY0 = currentRung.BoundingBox.Top;
+                            int currentIndex = allRungs.IndexOf(currentRung);
+
+                            if (currentIndex == -1)
+                            {
+                                continue;
+                            }
+
+                            double cropTopPdf = currentY0 + fixedTopOffset;
+                            double cropBottomPdf;
+
+                            // Verifica se há um próximo rung na página
+                            if (currentIndex + 1 < allRungs.Count)
+                            {
+                                var nextRung = allRungs[currentIndex + 1];
+                                double nextY0 = nextRung.BoundingBox.Top;
+
+                                double desiredCropBottomPdf = currentY0 - fixedBottomOffset;
+                                double nextRungCropBottomPdf = nextY0 + fixedTopOffset;
+
+                                cropBottomPdf = Math.Max(desiredCropBottomPdf, nextRungCropBottomPdf);
+                            }
+                            else
+                            {
+                                double lowestY0 = FindLowestYCoordinate(page);
+                                cropBottomPdf = Math.Max(lowestY0 - 20, 10);
+                            }
+
+                            cropTopPdf = Math.Min(cropTopPdf, page.Height);
+                            cropBottomPdf = Math.Max(cropBottomPdf, 10);
+
+                            double image_y0 = (page.Height - cropTopPdf) * scale;
+                            double image_y1 = (page.Height - cropBottomPdf) * scale;
+
+                            image_y0 = Math.Max(0, Math.Min(pageImage.Height, image_y0));
+                            image_y1 = Math.Max(0, Math.Min(pageImage.Height, image_y1));
+
+                            if (image_y0 > image_y1)
+                            {
+                                double temp = image_y0;
+                                image_y0 = image_y1;
+                                image_y1 = temp;
+                            }
+
+                            int cropX0 = 0;
+                            int cropY0 = (int)Math.Floor(image_y0);
+                            int cropWidth = pageImage.Width;
+                            int cropHeight = (int)Math.Ceiling(image_y1 - image_y0);
+
+                            if (cropY0 + cropHeight > pageImage.Height)
+                            {
+                                cropHeight = pageImage.Height - cropY0;
+                            }
+
+                            // **[Step 2]** Salva a imagem recortada
+                            try
+                            {
+                                var croppedImage = pageImage.Clone(ctx =>
+                                    ctx.Crop(new ImageSharpRectangle(cropX0, cropY0, cropWidth, cropHeight)));
+
+                                string outputFilename = $"{routine}_rung_{currentRung.Text}.png";
+                                //string fullOutputPath = Path.Combine(_outputDirectory, outputFilename);
+
+                                using (var stream = new FileStream(outputFilename, FileMode.Create)) //era fullOutputPath
+                                {
+                                    croppedImage.Save(stream, new PngEncoder());
+                                }
+
+                                // Adiciona o caminho da imagem à lista
+                                imagePaths.Add(outputFilename); //era fullOutputPath
+                            }
+                            catch (Exception ex)
+                            {
+                                // Tratar exceção
+                            }
+                        }
+                    }
+                }
+
+                return imagePaths; // Retorna a lista com os caminhos das imagens
+            }
+            catch (DllNotFoundException dllEx)
+            {
+                throw new Exception($"DLL não encontrada: {dllEx.Message}. Certifique-se de que 'pdfium.dll' está referenciado corretamente.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ocorreu um erro: {ex.Message}");
+            }
         }
+
 
         private static Image<Rgba32> RenderPageAsImage(PdfiumPdfDocument pdf, int pageIndex, double dpi)
         {
@@ -701,7 +894,7 @@ namespace SAI_OT_Apps.Server.Services
             return lowestY;
         }
 
-        public void DeleteOutputDirectory(string outputDirectory)
+        /*public void DeleteOutputDirectory(string outputDirectory)
         {
             // Se o caminho não for fornecido, utiliza o _outputDirectory armazenado
             if (string.IsNullOrEmpty(outputDirectory))
@@ -714,6 +907,42 @@ namespace SAI_OT_Apps.Server.Services
             if (Directory.Exists(outputDirectory))
             {
                 Directory.Delete(outputDirectory, true); // Exclui o diretório e seus arquivos
+            }
+        }*/
+
+        public void DeleteImages(string outputDirectory)
+        {
+            // Se o caminho não for fornecido, utiliza o _outputDirectory armazenado
+            if (string.IsNullOrEmpty(outputDirectory))
+            {
+                Console.WriteLine(_outputDirectory); // Verifica o caminho configurado
+                outputDirectory = _outputDirectory;
+            }
+
+            // Verifica se o diretório existe
+            if (Directory.Exists(outputDirectory))
+            {
+                // Filtra e exclui apenas arquivos de imagem (ex: .png, .jpg, .jpeg)
+                var imageFiles = Directory.GetFiles(outputDirectory, "*.*")
+                                          .Where(file => file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                                                         file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                                         file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase));
+
+                foreach (var filePath in imageFiles)
+                {
+                    try
+                    {
+                        File.Delete(filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Erro ao excluir o arquivo {filePath}: {ex.Message}");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Diretório não encontrado.");
             }
         }
     }
