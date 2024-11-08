@@ -59,9 +59,8 @@ export class CodeAuditorComponent implements OnInit {
   logicImagePath: string = '';
   temporaryImages: string[] = [];
   currentImageIndex: number = 0;
-  currentImagePath: string | undefined;  // Caminho da imagem atual
-  analysisCompleted: boolean = false; // Controle do alerta de sucesso
-  // Declara a variável showAlert
+  currentImagePath: string | undefined;  // Actual image path
+  analysisCompleted: boolean = false; 
   showAlert = false;
   alertMessage = 'Rung Analysis Completed!';
 
@@ -90,83 +89,6 @@ export class CodeAuditorComponent implements OnInit {
 
   }
 
-  /*//Main Request - Description Analysis
-  async auditDescriptionMain(): Promise<void> {
-    try
-    {
-      this.progress = 0;
-      this.loading = true;
-      this.SAIPreRungAnalysis = '';
-      this.RoutineDescriptionRevised = [];
-      // Get the values from FORM
-      this.routineName = this.profileForm.get('selectedOption')?.value;
-
-      // Ensure PLCFilePath is not empty or null
-      if (!this.PLCFilePath) {
-        throw new Error('PLC file path is required.');
-      }
-
-      // Await the result of GetRoutineByName
-      await this.GetRoutineByName(this.PLCFilePath, this.routineName);
-
-      // Call SAIDescriptionAnalysis only after GetRoutineByName completes
-      await this.SAIDescriptionAnalysis(this.routineCode);
-
-      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
-      console.log('logicImagePath:', this.logicImagePath);
-    }
-    catch (error)
-    {
-      console.error('Error in auditDescriptionMain:', error);
-      alert('An error occurred during the audit process.');
-    }
-  }*/
-
-  //Main Request - Description Analysis
-  /*async auditDescriptionMain(): Promise<void> {
-    try {
-      this.progress = 0;
-      this.loading = true;
-      this.SAIPreRungAnalysis = '';
-      this.RoutineDescriptionRevised = [];
-
-      // Obter os valores do FORM
-      this.routineName = this.profileForm.get('selectedOption')?.value;
-
-      // Garantir que PLCFilePath não esteja vazio ou nulo
-      if (!this.PLCFilePath) {
-        throw new Error('PLC file path is required.');
-      }
-
-      // Await the result of GetRoutineByName
-      await this.GetRoutineByName(this.PLCFilePath, this.routineName);
-
-      // Processar a análise da descrição após a extração e carregamento de imagens
-      //await this.SAIDescriptionAnalysis(this.routineCode);
-
-      // Chamar a função para extrair rungs do PDF e obter o caminho da pasta temporária
-      const outputDirectory = await this.extractRungsFromPdf();
-
-      // Carregar a primeira imagem da pasta temporária
-      if (this.temporaryImages && this.temporaryImages.length > 0) {
-        //this.logicImagePath = this.temporaryImages[this.currentImageIndex];
-        this.logicImagePath = `${outputDirectory}/${this.temporaryImages[this.currentImageIndex]}`;
-      } else {
-        throw new Error('No images found in temporary directory.');
-      }
-
-      // Processar a análise da descrição após a extração e carregamento de imagens
-      await this.SAIDescriptionAnalysis(this.routineCode);
-
-      console.log('logicImagePath:', this.logicImagePath);
-    } catch (error) {
-      console.error('Error in auditDescriptionMain:', error);
-      alert('An error occurred during the audit process.');
-    } finally {
-      this.loading = false;
-    }
-  }*/
-
   async auditDescriptionMain(): Promise<void> {
     try {
       this.progress = 0;
@@ -174,53 +96,44 @@ export class CodeAuditorComponent implements OnInit {
       this.SAIPreRungAnalysis = '';
       this.RoutineDescriptionRevised = [];
 
-      // Obter o valor da rotina do formulário
+      // Get the routine value from the form
       this.routineName = this.profileForm.get('selectedOption')?.value;
 
-      // Verificar se PLCFilePath está preenchido
+      // Check if PLCFilePath is provided
       if (!this.PLCFilePath) {
-        throw new Error('O caminho do arquivo PLC é obrigatório.');
+        throw new Error('PLC file path is required.');
       }
 
-      // Obter a rotina com o nome especificado
+      // Get the routine with the specified name
       await this.GetRoutineByName(this.PLCFilePath, this.routineName);
 
-      // Extrair rungs do PDF e obter o diretório de saída
+      // Extract rungs from the PDF and get the output directory
       const imageUrls = await this.extractRungsFromPdf();
 
-      /*// Verificar se as imagens foram carregadas e definir o caminho da primeira imagem
-      if (this.temporaryImages && this.temporaryImages.length > 0) {
-        // Atribui a primeira imagem do diretório temporário a `logicImagePath`
-        //this.logicImagePath = `${outputDirectory}/${this.temporaryImages[this.currentImageIndex]}`;
-        await this.loadTemporaryImages(imageUrls); // Carrega as URLs das imagens
-        this.logicImagePath = `${this.temporaryImages[this.currentImageIndex]}`;
-      } else {
-        throw new Error('Nenhuma imagem encontrada no diretório temporário.');
-      }*/
-      // Verificar se as imagens foram carregadas e definir o caminho da primeira imagem
+      // Check if the images were loaded and set the path for the first image
       if (imageUrls && imageUrls.length > 0) {
-        // Atualiza `temporaryImages` com as URLs retornadas
+        // Update `temporaryImages` with the returned URLs
         this.temporaryImages = imageUrls;
         this.currentImageIndex = 0;
 
-        // Configura o caminho da primeira imagem para exibição
-        //this.logicImagePath = this.temporaryImages[this.currentImageIndex];
+        // Set the path of the first image for display
         this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
       } else {
-        throw new Error('Nenhuma imagem encontrada no diretório temporário.');
+        throw new Error('No images found in the temporary directory.');
       }
 
-      // Chamar a função de análise da descrição com o código da rotina
+      // Call the description analysis function with the routine code
       await this.SAIDescriptionAnalysis(this.routineCode);
 
-      console.log('Caminho da lógica da imagem:', this.logicImagePath);
+      console.log('Logic image path:', this.logicImagePath);
     } catch (error) {
-      console.error('Erro em auditDescriptionMain:', error);
-      alert('Ocorreu um erro durante o processo de auditoria.');
+      console.error('Error in auditDescriptionMain:', error);
+      alert('An error occurred during the audit process.');
     } finally {
       this.loading = false;
     }
   }
+
 
 
   //Function resposible to user select the Option to Audit
@@ -260,121 +173,70 @@ export class CodeAuditorComponent implements OnInit {
 
   }
 
-  /*//Function to Apply Comment
-  applyComment() {
-    const newDesc = this.codeGenForm.get('newDescription')?.value;
-    const rungNumber = this.currentRung.Rung;
-    this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: newDesc });
-    this.UserSkipComment = false;
-    this.skipComment();  
-  }*/
-
   // Function to Apply Comment and move to the next image
   applyComment() {
     const newDesc = this.codeGenForm.get('newDescription')?.value;
     const rungNumber = this.currentRung.Rung;
 
-    // Adiciona a descrição revisada
+    // Add the revised description
     this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: newDesc });
 
     this.UserSkipComment = false;
 
-    // Passa para a próxima imagem
-    //this.nextImage();
+    // Move to the next image
     this.skipComment();
   }
 
-
-  /*//Go to the next rung 
-  async skipComment() {
-    //Stil interacting in the list
-    if (this.currentIndex < this.SAIRungAnalysis.length - 1)
-    {
-      if (this.UserSkipComment)
-      {
-        const rungNumber = this.currentRung.Rung;
-        this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: 'SKIP' });
-      }
-      this.currentIndex++;
-      this.progress = Math.round((this.currentIndex / this.SAIRungAnalysis.length) * 100);      
-      this.setCurrentRung();
-
-      //Change image path
-      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
-      console.log('logicImagePath:', this.logicImagePath);
-
-      // Manually trigger change detection
-      this.cdr.detectChanges();
-    }
-    //End of the list
-    else
-    {
-      if (this.currentIndex = this.SAIRungAnalysis.length) {
-        this.progress = 100;
-        this.currentRung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
-        this.codeGenForm.patchValue({newDescription: ''});
-        alert('Rung Analysis Completed');
-
-        this.UpdateRoutineWithComments(this.PLCFilePath, this.routineName, this.RoutineDescriptionRevised);
-        this.RoutineDescriptionRevised = [];
-      }
-      this.currentIndex = 0;
-      this.logicImagePath = '';
-      this.cdr.detectChanges();
-    }
-    this.UserSkipComment = true;    
-  }*/
-
   // Go to the next rung and image
   async skipComment() {
-    // Se ainda houver elementos na lista
+    // If there are still elements in the list
     if (this.currentIndex < this.SAIRungAnalysis.length - 1) {
-      // Adiciona 'SKIP' ao comentário se o usuário optar por pular
+      // Add 'SKIP' to the comment if the user chooses to skip
       if (this.UserSkipComment) {
         const rungNumber = this.currentRung.Rung;
         this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: 'SKIP' });
       }
 
-      // Avança para o próximo item da lista
+      // Move to the next item in the list
       this.currentIndex++;
       this.progress = Math.round((this.currentIndex / this.SAIRungAnalysis.length) * 100);
       this.setCurrentRung();
 
-      // Atualiza o caminho da próxima imagem
+      // Update the path of the next image
       this.updateCurrentImagePath();
 
-      //Atualiza Imagem
+      // Update Image
       this.nextImage();
 
-      // Trigger manual de change detection
+      // Manually trigger change detection
       this.cdr.detectChanges();
     }
-    // Se chegou ao fim da lista
+    // If we have reached the end of the list
     else {
       if (this.currentIndex === this.SAIRungAnalysis.length - 1) {
         this.progress = 100;
         this.currentRung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
         this.codeGenForm.patchValue({ newDescription: '' });
         if (this.progress == 100) {
-          this.showAlert = true; // Exibe o alerta quando o progresso atinge 100
+          this.showAlert = true; // Display alert when progress reaches 100
           //this.displayAlert('Rung Analysis Completed!');
         }
         //alert('Rung Analysis Completed');
 
-        // Atualiza a rotina com os comentários
+        // Update the routine with comments
         this.UpdateRoutineWithComments(this.PLCFilePath, this.routineName, this.RoutineDescriptionRevised);
         this.RoutineDescriptionRevised = [];
 
-        // Chama a função para deletar a pasta temporária
+        // Call the function to delete the temporary folder
         this.deleteTemporaryImages();
       }
-      // Reinicia o índice e o caminho da imagem
+      // Reset the index and image path
       this.currentIndex = 0;
       this.logicImagePath = '';
       this.cdr.detectChanges();
     }
 
-    // Marca a flag de pular comentário como verdadeira
+    // Mark the skip comment flag as true
     this.UserSkipComment = true;
   }
 
@@ -436,8 +298,8 @@ export class CodeAuditorComponent implements OnInit {
         (data) => {
           this.SAIPreRungAnalysis = data.preRungAnalysis;
           this.SAIRungAnalysis = data.rungAnalysis;
-          console.log('SAIRungAnalysis:', this.SAIRungAnalysis);
-          console.log('data:', data);
+          //console.log('SAIRungAnalysis:', this.SAIRungAnalysis);
+          //console.log('data:', data);
           this.setCurrentRung();
           this.loading = false;
           resolve();
@@ -482,199 +344,59 @@ export class CodeAuditorComponent implements OnInit {
     });
   }
 
-  async extractRungsFromPdf1(): Promise<string> {
-    this.loading = true;
-    try {
-      /*// Monta a URL da API com os parâmetros PLCFilePath e routineName
-      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(this.PLCFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
-
-      // Faz a requisição ao backend para extrair rungs e obter o diretório de saída
-      const outputDirectory: string = await lastValueFrom(this.http.post<string>(url, null));
-
-      // Obtém as imagens da pasta temporária
-      await this.loadTemporaryImages(outputDirectory);*/
-      // Modifique o caminho do arquivo para terminar em .pdf
-      const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
-      console.log("Caminho PDF: ", pdfFilePath);
-
-      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(pdfFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
-      //const url = `https://localhost:7070/extract-rungs?plcFilePath=C:/SAI/SAICodeAuditor/PLC_M45_1525_Dev.pdf&routineName=Alarm_Main`;
-
-      /*// Parâmetros passados no corpo da requisição com o caminho atualizado
-      const requestBody = {
-        plcFilePath: pdfFilePath,
-        routineName: this.routineName
-      };*/
-
-      // Log para verificar o URL
-      console.log("URL da requisição: ", url);
-
-      // Envia a requisição GET com os parâmetros no corpo
-      //const outputDirectory: string = await lastValueFrom(this.http.get<string>(url));
-      //console.log("output Directory: ", outputDirectory);
-      /*this.http.get<{ outputDirectory: string }>(url).subscribe(
-        response => {
-          console.log('Output Directory:', response.outputDirectory);
-          // Lógica para lidar com as imagens...
-        },
-        error => {
-          console.error('Error extracting rungs from PDF:', error);
-        }
-      );*/
-
-      // Envia a requisição GET com os parâmetros e aguarda a resposta com lastValueFrom
-      //const response = await lastValueFrom(this.http.get<{ outputDirectory: string }>(url));
-      //console.log('Output Directory:', response.outputDirectory);
-
-      // Envia a requisição GET e aguarda a resposta
-      const response = await lastValueFrom(this.http.get<{ outputDirectory: string, imageUrls: string[] }>(url));
-      console.log('Output Directory:', response.outputDirectory);
-      console.log('Image URLs:', response.imageUrls);
-
-      // Carregar as imagens da pasta temporária
-      if (response.outputDirectory && response.imageUrls.length > 0) {
-        await this.loadTemporaryImages(response.imageUrls);
-        return response.outputDirectory;
-      } else {
-        alert('Nenhuma imagem encontrada na pasta temporária.');
-        return '';
-      }
-    } catch (error) {
-      console.error('Error extracting rungs from PDF:', error);
-      alert('Failed to extract rungs from PDF');
-      return '';
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  /*async extractRungsFromPdf(): Promise<void> { //2a opção
-    this.loading = true;
-    try {
-      // Modifique o caminho do arquivo para terminar em .pdf
-      const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
-      console.log("Caminho PDF: ", pdfFilePath);
-
-      // Monta a URL da API com os parâmetros PLCFilePath e routineName
-      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(pdfFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
-
-      // Log para verificar o URL
-      console.log("URL da requisição: ", url);
-
-      // Envia a requisição GET e aguarda a resposta com `outputDirectory` e `imageUrls`
-      const response = await lastValueFrom(this.http.get<{ imageUrls: string[] }>(url));
-      console.log('Image URLs:', response.imageUrls);
-
-      // Carrega as imagens usando as URLs retornadas do backend
-      if (response.imageUrls && response.imageUrls.length > 0) {
-        this.temporaryImages = response.imageUrls;
-        this.currentImageIndex = 0;
-        this.updateCurrentImagePath(); // Atualiza o caminho da imagem atual
-      } else {
-        alert('Nenhuma imagem encontrada na pasta temporária.');
-      }
-    } catch (error) {
-      console.error('Erro ao extrair rungs do PDF:', error);
-      alert('Falha ao extrair rungs do PDF');
-    } finally {
-      this.loading = false;
-    }
-  }*/
-
   async extractRungsFromPdf(): Promise<string[]> {
     this.loading = true;
     try {
-      // Modifique o caminho do arquivo para terminar em .pdf
+      // Change the file extension for .pdf (The same file must be in the same folder of .L5X)
       const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
-      console.log("Caminho PDF: ", pdfFilePath);
+      //console.log("Caminho PDF: ", pdfFilePath);
 
-      // Monta a URL da API com os parâmetros PLCFilePath e routineName
+      // Makes the API URL with parameters PLCFilePath e routineName
       const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(pdfFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
 
       // Log para verificar o URL
-      console.log("URL da requisição: ", url);
+      //console.log("URL da requisição: ", url);
 
-      // Envia a requisição GET e aguarda a resposta com `outputDirectory` e `imageUrls`
+      // Send the GET req and awaits
       const response = await lastValueFrom(this.http.get<{ imageUrls: string[] }>(url));
-      console.log('Image URLs:', response.imageUrls);
+      //console.log('Image URLs:', response.imageUrls);
 
-      // Verificar se as imagens foram retornadas
+      // Check if the images are being returned
       if (response.imageUrls && response.imageUrls.length > 0) {
-        return response.imageUrls; // Retorna o array de URLs
+        return response.imageUrls; // Return the URLs array
       } else {
         alert('Nenhuma imagem encontrada na pasta temporária.');
-        return []; // Retorna um array vazio se não houver imagens
+        return []; // Returns an empty array in case of error
       }
     } catch (error) {
-      console.error('Erro ao extrair rungs do PDF:', error);
+      //console.error('Erro ao extrair rungs do PDF:', error);
       alert('Falha ao extrair rungs do PDF');
-      return []; // Retorna um array vazio em caso de erro
+      return []; // In case of Error, it displays an empty array
     } finally {
       this.loading = false;
     }
   }
 
-
-
-  /*private async loadTemporaryImages(directoryPath: string): Promise<void> {
-    // Endpoint para listar as imagens da pasta temporária
-    const listUrl = `https://localhost:7070/ListImages?directoryPath=${encodeURIComponent(directoryPath)}`;
-    try {
-      const images = await lastValueFrom(this.http.get<string[]>(listUrl));
-      this.temporaryImages = images;
-      this.currentImageIndex = 0;
-      this.updateCurrentImagePath();
-    } catch (error) {
-      console.error('Failed to load temporary images:', error);
-      alert('Failed to load images from temporary directory');
-    }
-  }*/
-
-  // Carrega as imagens da pasta temporária
-  /*private async loadTemporaryImages(directoryPath: string): Promise<void> {
-    const listUrl = `https://localhost:7070/ListImages?directoryPath=${encodeURIComponent(directoryPath)}`;
-    try {
-      const images = await lastValueFrom(this.http.get<string[]>(listUrl));
-      this.temporaryImages = images;
-      this.currentImageIndex = 0;
-      this.updateCurrentImagePath();
-    } catch (error) {
-      console.error('Failed to load temporary images:', error);
-      alert('Failed to load images from temporary directory');
-    }
-  }*/
-
-  // Carrega as imagens a partir dos URLs fornecidos
+  // Load the images based on the URLs
   private async loadTemporaryImages(imageUrls: string[]): Promise<void> {
     try {
-      // Armazena a lista de URLs de imagens para navegação
+      // Stores de URLs list navigation
       this.temporaryImages = imageUrls;
       this.currentImageIndex = 0;
-      this.updateCurrentImagePath(); // Atualiza a imagem exibida
+      this.updateCurrentImagePath(); // Update the image displayed
     } catch (error) {
-      console.error('Failed to load temporary images:', error);
       alert('Failed to load images from temporary directory');
     }
   }
 
-  /*private updateCurrentImagePath(): void {
-    if (this.temporaryImages.length > 0 && this.currentImageIndex < this.temporaryImages.length) {
-      this.logicImagePath = this.temporaryImages[this.currentImageIndex];
-      this.cdr.detectChanges();
-    } else {
-      this.logicImagePath = '';
-    }
-  }*/
-
-  // Atualiza o caminho da imagem atual para exibição
+  // Update the current image path for the displayed image
   private updateCurrentImagePath(): void {
     if (this.temporaryImages && this.temporaryImages.length > 0) {
-      //this.currentImagePath = this.temporaryImages[this.currentImageIndex];
       this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
     }
   }
 
-
+  // Navigate to the next image
   nextImage(): void {
     if (this.currentImageIndex < this.temporaryImages.length - 1) {
       this.currentImageIndex++;
@@ -691,26 +413,26 @@ export class CodeAuditorComponent implements OnInit {
     }
   }
 
-  // Função para deletar o diretório temporário chamando o endpoint do backend
+  // Delete temporary images after usage
   deleteTemporaryImages() {
     this.http.delete('https://localhost:7070/delete-images', {
       responseType: 'text'
     }).subscribe({
       next: (response) => {
-        console.log('Imagens excluídas com sucesso:', response);
+        console.log('Temporary images deleted successfully: ', response);
       },
       error: (error) => {
-        console.error('Erro ao excluir as imagens:', error);
+        console.error('Error deleting temporary images:', error);
       }
     });
   }
 
-  // Método para fechar o alerta pop-up
+  // Close the pop-up alert
   closeAlert() {
     this.showAlert = false;
   }
 
-  // Exibe o pop-up com uma mensagem customizada
+  // Display customized pop-up message
   displayAlert(message: string) {
     this.alertMessage = message;
     this.showAlert = true;

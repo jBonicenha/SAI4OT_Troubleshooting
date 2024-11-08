@@ -417,281 +417,34 @@ namespace SAI_OT_Apps.Server.Services
             }
             return null;
         }
-
-        /*public async Task<string> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory) //was string
-        {
-            if (string.IsNullOrEmpty(pdfPath))
-            {
-                throw new ArgumentNullException(nameof(pdfPath), "O caminho do PDF não pode ser nulo ou vazio.");
-            }
-
-            if (!File.Exists(pdfPath))
-            {
-                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
-            }
-
-            if (!File.Exists(pdfPath))
-            {
-                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
-            }
-            // Define the left margin threshold in points
-            double leftMarginThreshold = 15; // 15 points from the left
-
-            // Define fixed offsets in points
-            double fixedTopOffset = 20;      // 20 points above the rung
-            double fixedBottomOffset = 500;  // 500 points below the rung
-
-            // DPI for image rendering
-            double dpi = 300.0;
-            double scale = dpi / 72.0; // 1 point = 1/72 inch
-
-            //string outputDirectory = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
-            _outputDirectory = outputDirectory.Replace("\\", "\\\\");//(Path.DirectorySeparatorChar, '\\');
-
-            Directory.CreateDirectory(_outputDirectory);
-
-            try
-            {
-                // **[Step 1]** Create a list to store cropped images
-                List<ImageSharpImage> croppedImages = new List<ImageSharpImage>();
-                using (var pdf = PdfiumPdfDocument.Load(pdfPath))
-                using (var document = PdfPigDocument.Open(pdfPath))
-                {
-                    int totalPages = document.NumberOfPages;
-
-                    bool continueProcessing = true;
-
-
-                    // Dictionary to hold routine names and their corresponding page indices
-                    Dictionary<string, List<int>> routinePages = new Dictionary<string, List<int>>();
-
-                    for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
-                    {
-                        UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
-                        var words = page.GetWords().ToList();
-
-                        // Identify header words (x ~ 0 and highest y)
-                        var headerWords = words
-                            .Where(w => w.BoundingBox.Left <= 5) // Adjust threshold as needed
-                            .OrderByDescending(w => w.BoundingBox.Top)
-                            .ToList();
-
-                        string routineName = headerWords.FirstOrDefault()?.Text.Trim();
-
-                        if (string.IsNullOrEmpty(routineName))
-                        {
-                            routineName = "UnknownRoutine";
-                        }
-
-                        if (!routinePages.ContainsKey(routineName))
-                        {
-                            routinePages[routineName] = new List<int>();
-                        }
-                        routinePages[routineName].Add(pageIndex);
-                    }
-
-                    string selectedRoutine = routine;
-
-                    bool anyRungFound = false;
-
-                    List<int> pagesToProcess = routinePages[selectedRoutine];
-                    int totalPagesInRoutine = pagesToProcess.Count;
-
-                    for (int i = 0; i < totalPagesInRoutine; i++)
-                    {
-                        int pageIndex = pagesToProcess[i];
-                        UglyToad.PdfPig.Content.Page page = document.GetPage(pageIndex + 1);
-                        var words = page.GetWords().ToList(); // Convert to List for indexing
-
-                        // Collect all rung occurrences on this page (only rungs within left margin)
-                        var allRungs = words
-                            .Where(w =>
-                                (int.TryParse(w.Text.Trim(), out _) ||
-                                    w.Text.Trim().Equals("(End)", StringComparison.OrdinalIgnoreCase)) &&
-                                w.BoundingBox.Left <= leftMarginThreshold)
-                            .OrderByDescending(w => w.BoundingBox.Top)
-                            .ToList();
-
-                        // Collect specific rung occurrences based on user input
-                        var specificRungs = allRungs.ToList();
-
-                        if (specificRungs.Count == 0)
-                        {
-                            //Console.WriteLine("No rungs found on this page.\n");
-                            continue;
-                        }
-
-                        // Render the page as image at specified DPI once per page
-                        ImageSharpImage pageImage = RenderPageAsImage(pdf, pageIndex, dpi);
-
-                        if (pageImage == null)
-                        {
-                            //Console.WriteLine($"Failed to render page {pageIndex + 1}\n");
-                            continue;
-                        }
-
-                        // Iterate through each specific rung occurrence
-                        foreach (var currentRung in specificRungs)
-                        {
-                            anyRungFound = true;
-
-                            double currentY0 = currentRung.BoundingBox.Top;
-
-                            // Find the index of the current rung in the allRungs list
-                            int currentIndex = allRungs.IndexOf(currentRung);
-
-                            if (currentIndex == -1)
-                            {
-                                //Console.WriteLine("Error: Current rung not found in allRungs list. Skipping this rung.\n");
-                                continue;
-                            }
-
-                            double cropTopPdf = currentY0 + fixedTopOffset;
-                            double cropBottomPdf;
-                            string nextRungInfo = "N/A";
-
-                            if (currentIndex + 1 < allRungs.Count)
-                            {
-                                // There is a next rung on the same page
-                                var nextRung = allRungs[currentIndex + 1];
-                                double nextY0 = nextRung.BoundingBox.Top;
-
-                                // Calculate cropBottomPdf as the maximum of:
-                                // 1. fixedBottomOffset below the current rung
-                                // 2. fixedTopOffset above the next rung
-                                double desiredCropBottomPdf = currentY0 - fixedBottomOffset;
-                                double nextRungCropBottomPdf = nextY0 + fixedTopOffset;
-
-                                // Ensure that we don't crop beyond the next rung
-                                cropBottomPdf = Math.Max(desiredCropBottomPdf, nextRungCropBottomPdf);
-
-                                nextRungInfo = $"Next rung '{nextRung.Text}' at y0: {nextY0}";
-                            }
-                            else
-                            {
-                                // No next rung found, use dynamic end offset
-                                double lowestY0 = FindLowestYCoordinate(page);
-
-                                // Subtract an additional 20 points from the lowestY0 for cropping (as per your deliberate change)
-                                double newCropBottomPdf = lowestY0 - 20;
-
-                                // Ensure that cropBottomPdf does not go below 10 points
-                                cropBottomPdf = Math.Max(newCropBottomPdf, 10);
-
-                                nextRungInfo = "No next rung found, using dynamic end offset based on the lowest character above the bottom margin and subtracting 20 points.";
-                            }
-
-                            // Clamp y-coordinates to page boundaries
-                            cropTopPdf = Math.Min(cropTopPdf, page.Height);
-                            cropBottomPdf = Math.Max(cropBottomPdf, 10);
-
-                            // Convert PDF coordinates to image pixels
-                            // PDF origin is bottom-left; Image origin is top-left
-                            double image_y0 = (page.Height - cropTopPdf) * scale; // Upper Y in image
-                            double image_y1 = (page.Height - cropBottomPdf) * scale; // Lower Y in image
-
-                            // Clamp image_y0 and image_y1 to image bounds
-                            image_y0 = Math.Max(0, Math.Min(pageImage.Height, image_y0));
-                            image_y1 = Math.Max(0, Math.Min(pageImage.Height, image_y1));
-
-                            // Ensure image_y0 < image_y1 for ImageSharp cropping
-                            if (image_y0 > image_y1)
-                            {
-                                // Swap to maintain y0 < y1
-                                double temp = image_y0;
-                                image_y0 = image_y1;
-                                image_y1 = temp;
-                            }
-
-                            // Calculate crop rectangle in pixels
-                            int cropX0 = 0;
-                            int cropY0 = (int)Math.Floor(image_y0);
-                            int cropWidth = pageImage.Width; // Full width
-                            int cropHeight = (int)Math.Ceiling(image_y1 - image_y0);
-
-                            // Ensure crop dimensions are within image bounds
-                            if (cropY0 + cropHeight > pageImage.Height)
-                            {
-                                //Console.WriteLine($"Adjusting crop height from {cropHeight} to fit within image bounds.");
-                                cropHeight = pageImage.Height - cropY0;
-
-                                if (cropHeight <= 0)
-                                {
-                                    //Console.WriteLine($"Adjusted crop height is invalid. Skipping cropping.\n");
-                                    continue;
-                                }
-                            }
-
-                            // **[Step 2]** Assign the cropped image to the list instead of saving
-                            try
-                            {
-                                var croppedImage = pageImage.Clone(ctx =>
-                                    ctx.Crop(new ImageSharpRectangle(cropX0, cropY0, cropWidth, cropHeight)));
-
-                                // Generate timestamp
-                                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-                                // Define the output filename with timestamp
-                                string outputFilename = Path.Combine(_outputDirectory, $"{routine}_rung_{currentRung.Text}.png");//_page_{pageIndex + 1}.png");
-
-                                // Salva a imagem recortada, sobrescrevendo se necessário
-                                using (var stream = new FileStream(outputFilename, FileMode.Create))
-                                {
-                                    // Salva a imagem no arquivo
-                                    croppedImage.Save(stream, new PngEncoder());
-                                }
-
-                                // **[Step 3]** Add the cropped image to the list
-                                croppedImages.Add(croppedImage);
-                            }
-                            catch (Exception ex)
-                            {
-                                //Console.WriteLine($"Failed to process cropped image: {ex.Message}\n");
-                            }
-                        }
-                    }
-                }
-
-                return _outputDirectory;
-            }
-            catch (DllNotFoundException dllEx)
-            {
-                throw new Exception($"DLL not found: {dllEx.Message}. Ensure 'pdfium.dll' is correctly referenced in your project.");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred: {ex.Message}");
-            }
-        }*/
-
         public async Task<List<string>> ExtractRungsFromPdf(string pdfPath, string routine, string outputDirectory)
         {
             if (string.IsNullOrEmpty(pdfPath))
             {
-                throw new ArgumentNullException(nameof(pdfPath), "O caminho do PDF não pode ser nulo ou vazio.");
+                throw new ArgumentNullException(nameof(pdfPath), "The PDF path cannot be null or empty.");
             }
 
             if (!File.Exists(pdfPath))
             {
-                throw new FileNotFoundException("Arquivo PDF não encontrado no caminho especificado.", pdfPath);
+                throw new FileNotFoundException("PDF file not found at the specified path.", pdfPath);
             }
 
-            // Define a margem esquerda para detectar os rungs
-            double leftMarginThreshold = 15; // 15 pontos da esquerda
+            // Define the left margin for detecting rungs
+            double leftMarginThreshold = 15; // 15 points from the left
 
-            // Define deslocamentos fixos
-            double fixedTopOffset = 20;      // 20 pontos acima do rung
-            double fixedBottomOffset = 500;  // 500 pontos abaixo do rung
+            // Define fixed offsets
+            double fixedTopOffset = 20;      // 20 points above the rung
+            double fixedBottomOffset = 500;  // 500 points below the rung
 
-            // DPI para renderização da imagem
+            // DPI for rendering the image
             double dpi = 300.0;
-            double scale = dpi / 72.0; // 1 ponto = 1/72 polegada
+            double scale = dpi / 72.0; // 1 point = 1/72 inch
 
-            _outputDirectory = outputDirectory.Replace("\\", "\\\\"); // Ajusta o diretório de saída
+            _outputDirectory = outputDirectory.Replace("\\", "\\\\"); // Adjust the output directory
 
             Directory.CreateDirectory(_outputDirectory);
 
-            List<string> imagePaths = new List<string>(); // Armazenar os caminhos das imagens salvas
+            List<string> imagePaths = new List<string>(); // Store the paths of saved images
 
             try
             {
@@ -700,16 +453,16 @@ namespace SAI_OT_Apps.Server.Services
                 {
                     int totalPages = document.NumberOfPages;
 
-                    // Dicionário para armazenar páginas correspondentes a cada rotina
+                    // Dictionary to store pages corresponding to each routine
                     Dictionary<string, List<int>> routinePages = new Dictionary<string, List<int>>();
 
-                    // Loop pelas páginas do PDF para localizar as rotinas
+                    // Loop through the PDF pages to locate routines
                     for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
                     {
                         var page = document.GetPage(pageIndex + 1);
                         var words = page.GetWords().ToList();
 
-                        // Identificar palavras do cabeçalho
+                        // Identify header words
                         var headerWords = words
                             .Where(w => w.BoundingBox.Left <= 5)
                             .OrderByDescending(w => w.BoundingBox.Top)
@@ -729,17 +482,17 @@ namespace SAI_OT_Apps.Server.Services
                         routinePages[routineName].Add(pageIndex);
                     }
 
-                    // Filtra páginas da rotina selecionada
+                    // Filter pages of the selected routine
                     string selectedRoutine = routine;
                     List<int> pagesToProcess = routinePages[selectedRoutine];
 
-                    // Loop pelas páginas da rotina selecionada
+                    // Loop through the pages of the selected routine
                     foreach (var pageIndex in pagesToProcess)
                     {
                         var page = document.GetPage(pageIndex + 1);
                         var words = page.GetWords().ToList();
 
-                        // Filtra todos os rungs na margem esquerda
+                        // Filter all rungs in the left margin
                         var allRungs = words
                             .Where(w =>
                                 (int.TryParse(w.Text.Trim(), out _) ||
@@ -748,13 +501,13 @@ namespace SAI_OT_Apps.Server.Services
                             .OrderByDescending(w => w.BoundingBox.Top)
                             .ToList();
 
-                        // Se não houver rungs na página, continua para a próxima página
+                        // If no rungs are found on the page, continue to the next page
                         if (allRungs.Count == 0)
                         {
                             continue;
                         }
 
-                        // Renderiza a página como imagem
+                        // Render the page as an image
                         ImageSharpImage pageImage = RenderPageAsImage(pdf, pageIndex, dpi);
 
                         if (pageImage == null)
@@ -762,7 +515,7 @@ namespace SAI_OT_Apps.Server.Services
                             continue;
                         }
 
-                        // Processa cada rung encontrado
+                        // Process each rung found
                         foreach (var currentRung in allRungs)
                         {
                             double currentY0 = currentRung.BoundingBox.Top;
@@ -776,7 +529,7 @@ namespace SAI_OT_Apps.Server.Services
                             double cropTopPdf = currentY0 + fixedTopOffset;
                             double cropBottomPdf;
 
-                            // Verifica se há um próximo rung na página
+                            // Check if there is a next rung on the page
                             if (currentIndex + 1 < allRungs.Count)
                             {
                                 var nextRung = allRungs[currentIndex + 1];
@@ -819,7 +572,7 @@ namespace SAI_OT_Apps.Server.Services
                                 cropHeight = pageImage.Height - cropY0;
                             }
 
-                            // **[Step 2]** Salva a imagem recortada
+                            // **[Step 2]** Save the cropped image
                             try
                             {
                                 var croppedImage = pageImage.Clone(ctx =>
@@ -828,31 +581,31 @@ namespace SAI_OT_Apps.Server.Services
                                 string outputFilename = $"{routine}_rung_{currentRung.Text}.png";
                                 //string fullOutputPath = Path.Combine(_outputDirectory, outputFilename);
 
-                                using (var stream = new FileStream(outputFilename, FileMode.Create)) //era fullOutputPath
+                                using (var stream = new FileStream(outputFilename, FileMode.Create)) //was fullOutputPath
                                 {
                                     croppedImage.Save(stream, new PngEncoder());
                                 }
 
-                                // Adiciona o caminho da imagem à lista
-                                imagePaths.Add(outputFilename); //era fullOutputPath
+                                // Add the image path to the list
+                                imagePaths.Add(outputFilename); //was fullOutputPath
                             }
                             catch (Exception ex)
                             {
-                                // Tratar exceção
+                                // Handle exception
                             }
                         }
                     }
                 }
 
-                return imagePaths; // Retorna a lista com os caminhos das imagens
+                return imagePaths; // Return the list of image paths
             }
             catch (DllNotFoundException dllEx)
             {
-                throw new Exception($"DLL não encontrada: {dllEx.Message}. Certifique-se de que 'pdfium.dll' está referenciado corretamente.");
+                throw new Exception($"DLL not found: {dllEx.Message}. Make sure 'pdfium.dll' is referenced correctly.");
             }
             catch (Exception ex)
             {
-                throw new Exception($"Ocorreu um erro: {ex.Message}");
+                throw new Exception($"An error occurred: {ex.Message}");
             }
         }
 
@@ -894,35 +647,19 @@ namespace SAI_OT_Apps.Server.Services
             return lowestY;
         }
 
-        /*public void DeleteOutputDirectory(string outputDirectory)
-        {
-            // Se o caminho não for fornecido, utiliza o _outputDirectory armazenado
-            if (string.IsNullOrEmpty(outputDirectory))
-            {
-                Console.WriteLine(_outputDirectory); // Deve imprimir o caminho com barras invertidas
-
-                outputDirectory = _outputDirectory;
-            }
-
-            if (Directory.Exists(outputDirectory))
-            {
-                Directory.Delete(outputDirectory, true); // Exclui o diretório e seus arquivos
-            }
-        }*/
-
         public void DeleteImages(string outputDirectory)
         {
-            // Se o caminho não for fornecido, utiliza o _outputDirectory armazenado
+            // Set the current path as standard
             if (string.IsNullOrEmpty(outputDirectory))
             {
-                Console.WriteLine(_outputDirectory); // Verifica o caminho configurado
+                
                 outputDirectory = _outputDirectory;
             }
 
-            // Verifica se o diretório existe
+            // Checks if the folder exists
             if (Directory.Exists(outputDirectory))
             {
-                // Filtra e exclui apenas arquivos de imagem (ex: .png, .jpg, .jpeg)
+                // Filter and exclude ontly image files (ex: .png, .jpg, .jpeg)
                 var imageFiles = Directory.GetFiles(outputDirectory, "*.*")
                                           .Where(file => file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                                          file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
@@ -936,13 +673,13 @@ namespace SAI_OT_Apps.Server.Services
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Erro ao excluir o arquivo {filePath}: {ex.Message}");
+                        //Console.WriteLine($"Error in excluiding file {filePath}: {ex.Message}");
                     }
                 }
             }
             else
             {
-                Console.WriteLine("Diretório não encontrado.");
+                //Console.WriteLine("Folder not found.");
             }
         }
     }

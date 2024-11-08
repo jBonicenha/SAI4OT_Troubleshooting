@@ -8,13 +8,13 @@
   margin: 0;
 }
 
-/* Estilo de alerta que aparece no topo da página */
+/* Alert style that appears at the top of the page */
 .custom-alert {
   position: fixed;
-  top: 20px; /* Ajuste a distância do topo */
+  top: 20px; /* Distance from the top */
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1050; /* Garantia de que o alerta fique acima de outros elementos */
+  z-index: 1050; /* Ensures the alert stays above other elements */
   width: auto;
   max-width: 90%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -23,5 +23,5 @@
 
 /*textarea {
   overflow: hidden;*/ /* Hide scrollbars */
-  /*resize: none;*/ /* Prevent manual resizing */
+/*resize: none;*/ /* Prevent manual resizing */
 /*}*/
