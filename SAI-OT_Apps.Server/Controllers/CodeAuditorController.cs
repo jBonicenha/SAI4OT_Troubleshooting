@@ -6,9 +6,10 @@ namespace SAI_OT_Apps.Server.Controllers
     public class CodeAuditorController : Controller
     {
         private CodeAuditorService _codeAuditorService;
-        public CodeAuditorController()
+
+        public CodeAuditorController(CodeAuditorService codeAuditorService)
         {
-            _codeAuditorService = new CodeAuditorService(); // Instantiate the service here
+            _codeAuditorService = codeAuditorService;
         }
 
         public class RoutineCodeRequest
@@ -91,15 +92,22 @@ namespace SAI_OT_Apps.Server.Controllers
 
     public class CodeAuditorControllerUDT : Controller
     {
-        private CodeAuditorServiceUDT _codeAuditorServiceUDT;
-        public CodeAuditorControllerUDT()
+        public class RungExtractionRequest
         {
-            _codeAuditorServiceUDT = new CodeAuditorServiceUDT(); // Instantiate the service here
+            public string PdfPath { get; set; }
+            public string Routine { get; set; }
+        }
+
+        private CodeAuditorServiceUDT _codeAuditorServiceUDT;
+
+        public CodeAuditorControllerUDT(CodeAuditorServiceUDT codeAuditorServiceUDT)
+        {
+            _codeAuditorServiceUDT = codeAuditorServiceUDT;
         }
 
         [HttpPost("AuditUDTAnalysis")]
         public async Task<IActionResult> AuditUDTCode([FromQuery] string PLCfilePath)
-        {            
+        {
             try
             {
                 var result = _codeAuditorServiceUDT.AuditUDTCode(PLCfilePath);
@@ -112,5 +120,77 @@ namespace SAI_OT_Apps.Server.Controllers
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
         }
+
+        [HttpGet("extract-rungs")]
+        public async Task<IActionResult> ExtractRungsFromPdf(string plcFilePath, string routineName)
+        {
+            string outputDirectory = Directory.GetCurrentDirectory();
+            Directory.CreateDirectory(outputDirectory);
+
+            // Call the Service to process the extraction, passing the outputDirectory
+            var imagePaths = await _codeAuditorServiceUDT.ExtractRungsFromPdf(plcFilePath, routineName, outputDirectory);
+
+            // Create URLs for the images that are accessible via HTTP
+            var imageUrls = imagePaths.Select(fileName => Url.Action("GetImage", new { fileName })).ToList();
+
+            return Ok(new { imageUrls });
+        }
+
+        [HttpGet("ListImages")]
+        public IActionResult ListImages()
+        {
+            string directoryPath = Path.Combine(Path.GetTempPath(), "ExtractedRungs");
+            if (!Directory.Exists(directoryPath))
+            {
+                return NotFound("Directory not found");
+            }
+
+            // List all image files in the specified directory
+            var imageFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(file => file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg"))
+                .Select(file => Path.GetFileName(file))
+                .ToList();
+
+            return Ok(imageFiles);
+        }
+
+        [HttpGet("GetImage")]
+        public IActionResult GetImage(string fileName)
+        {
+            // Get the current project directory
+            string projectDirectory = Directory.GetCurrentDirectory();
+
+            //string filePath = Path.Combine(Path.GetTempPath(), "ExtractedRungs", fileName);
+            string filePath = Path.Combine(projectDirectory, fileName);
+            //Console.WriteLine("GetImage filepath: " + filePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Image not found.");
+            }
+
+            byte[] imageBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(imageBytes, "image/png");  // Adjust the content type according to the image format
+        }
+
+        [HttpDelete("delete-images")]
+        public IActionResult DeleteImages()
+        {
+            try
+            {
+                // Get the current project directory
+                string projectDirectory = Directory.GetCurrentDirectory();
+
+                // Call the function to delete the images without deleting the directory
+                _codeAuditorServiceUDT.DeleteImages(projectDirectory);
+                return Ok("Images deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error deleting the images: {ex.Message}");
+            }
+        }
+
     }
+
 }

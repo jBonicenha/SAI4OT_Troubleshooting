@@ -30,7 +30,7 @@ export class CodeAuditorComponent implements OnInit {
   profileForm: FormGroup = new FormGroup({
     folderPath: new FormControl(null),
     selectedOption: new FormControl('Text'),
-    codeAuditorOption: new FormControl('Text'),
+    codeAuditorOption: new FormControl('Text')
   });
 
   outputFormats: string[] = [];
@@ -50,14 +50,32 @@ export class CodeAuditorComponent implements OnInit {
   RoutineDescriptionRevised: RungDescription[] = [];
   //SAIRungAnalysis: { [key: string]: string[] } = {};
   routineCode: string = '';
-  currentRung: Rung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: ''};
+  currentRung: Rung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
   currentIndex: number = 0;
   progress: number = 0;
   Option1Selected: boolean = false;
   OptionSelected: number = 0;
   UserSkipComment: boolean = true;
   logicImagePath: string = '';
-  constructor(private http: HttpClient, private router: Router, private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
+  temporaryImages: string[] = [];
+  currentImageIndex: number = 0;
+  currentImagePath: string | undefined;  // Actual image path
+  analysisCompleted: boolean = false; 
+  showAlert = false;
+  alertMessage = 'Rung Analysis Completed!';
+
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.profileForm = this.fb.group({
+      folderPath: new FormControl(null),
+      selectedOption: new FormControl('Text'),
+      codeAuditorOption: new FormControl('Text')
+    });
+  }
 
   get selectedOptions() {
     return this.profileForm.get('selectedOption')?.value;
@@ -66,42 +84,57 @@ export class CodeAuditorComponent implements OnInit {
   //Main Request - UDT Analysis
   async auditUDTMain(): Promise<void> {
 
-    this.loading = true;
+    this.loading = true;//
     await this.UDTAnalysis(this.PLCFilePath);
 
   }
 
-  //Main Request - Description Analysis
   async auditDescriptionMain(): Promise<void> {
-    try
-    {
+    try {
       this.progress = 0;
       this.loading = true;
       this.SAIPreRungAnalysis = '';
       this.RoutineDescriptionRevised = [];
-      // Get the values from FORM
+
+      // Get the routine value from the form
       this.routineName = this.profileForm.get('selectedOption')?.value;
 
-      // Ensure PLCFilePath is not empty or null
+      // Check if PLCFilePath is provided
       if (!this.PLCFilePath) {
         throw new Error('PLC file path is required.');
       }
 
-      // Await the result of GetRoutineByName
+      // Get the routine with the specified name
       await this.GetRoutineByName(this.PLCFilePath, this.routineName);
 
-      // Call SAIDescriptionAnalysis only after GetRoutineByName completes
+      // Extract rungs from the PDF and get the output directory
+      const imageUrls = await this.extractRungsFromPdf();
+
+      // Check if the images were loaded and set the path for the first image
+      if (imageUrls && imageUrls.length > 0) {
+        // Update `temporaryImages` with the returned URLs
+        this.temporaryImages = imageUrls;
+        this.currentImageIndex = 0;
+
+        // Set the path of the first image for display
+        this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
+      } else {
+        throw new Error('No images found in the temporary directory.');
+      }
+
+      // Call the description analysis function with the routine code
       await this.SAIDescriptionAnalysis(this.routineCode);
 
-      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
-      console.log('logicImagePath:', this.logicImagePath);
-    }
-    catch (error)
-    {
+      console.log('Logic image path:', this.logicImagePath);
+    } catch (error) {
       console.error('Error in auditDescriptionMain:', error);
       alert('An error occurred during the audit process.');
+    } finally {
+      this.loading = false;
     }
   }
+
+
 
   //Function resposible to user select the Option to Audit
   onOptionChange(event: Event): void {
@@ -140,53 +173,71 @@ export class CodeAuditorComponent implements OnInit {
 
   }
 
-  //Function to Apply Comment
+  // Function to Apply Comment and move to the next image
   applyComment() {
     const newDesc = this.codeGenForm.get('newDescription')?.value;
     const rungNumber = this.currentRung.Rung;
+
+    // Add the revised description
     this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: newDesc });
+
     this.UserSkipComment = false;
-    this.skipComment();  
+
+    // Move to the next image
+    this.skipComment();
   }
 
-  //Go to the next rung 
-  skipComment() {
-    //Stil interacting in the list
-    if (this.currentIndex < this.SAIRungAnalysis.length - 1)
-    {
-      if (this.UserSkipComment)
-      {
+  // Go to the next rung and image
+  async skipComment() {
+    // If there are still elements in the list
+    if (this.currentIndex < this.SAIRungAnalysis.length - 1) {
+      // Add 'SKIP' to the comment if the user chooses to skip
+      if (this.UserSkipComment) {
         const rungNumber = this.currentRung.Rung;
         this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: 'SKIP' });
       }
+
+      // Move to the next item in the list
       this.currentIndex++;
-      this.progress = Math.round((this.currentIndex / this.SAIRungAnalysis.length) * 100);      
+      this.progress = Math.round((this.currentIndex / this.SAIRungAnalysis.length) * 100);
       this.setCurrentRung();
 
-      //Change image path
-      this.logicImagePath = `../assets/img/${this.routineName}/${this.currentRung.Rung.replace(':', '.png')}`;
-      console.log('logicImagePath:', this.logicImagePath);
+      // Update the path of the next image
+      this.updateCurrentImagePath();
+
+      // Update Image
+      this.nextImage();
 
       // Manually trigger change detection
       this.cdr.detectChanges();
     }
-    //End of the list
-    else
-    {
-      if (this.currentIndex = this.SAIRungAnalysis.length) {
+    // If we have reached the end of the list
+    else {
+      if (this.currentIndex === this.SAIRungAnalysis.length - 1) {
         this.progress = 100;
         this.currentRung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
-        this.codeGenForm.patchValue({newDescription: ''});
-        alert('Rung Analysis Completed');
+        this.codeGenForm.patchValue({ newDescription: '' });
+        if (this.progress == 100) {
+          this.showAlert = true; // Display alert when progress reaches 100
+          //this.displayAlert('Rung Analysis Completed!');
+        }
+        //alert('Rung Analysis Completed');
 
+        // Update the routine with comments
         this.UpdateRoutineWithComments(this.PLCFilePath, this.routineName, this.RoutineDescriptionRevised);
         this.RoutineDescriptionRevised = [];
+
+        // Call the function to delete the temporary folder
+        this.deleteTemporaryImages();
       }
+      // Reset the index and image path
       this.currentIndex = 0;
       this.logicImagePath = '';
       this.cdr.detectChanges();
     }
-    this.UserSkipComment = true;    
+
+    // Mark the skip comment flag as true
+    this.UserSkipComment = true;
   }
 
   //During the revision processing set the current rung
@@ -201,7 +252,7 @@ export class CodeAuditorComponent implements OnInit {
   }
 
   adjustHeight(event: Event): void {
-    console.log('Input event triggered'); 
+    console.log('Input event triggered');
     const textarea = event.target as HTMLTextAreaElement;
     textarea.style.height = 'auto'; // Reset the height
     textarea.style.height = `${textarea.scrollHeight}px`; // Set the height to the scroll height
@@ -216,7 +267,7 @@ export class CodeAuditorComponent implements OnInit {
     const url = `https://localhost:7070/RoutinesList?PLCfilePath=${encodeURIComponent(this.PLCFilePath)}`;
     try {
       const data = await lastValueFrom(this.http.post<string[]>(url, null, { responseType: 'json' }));
-       // Handle the response data as needed
+      // Handle the response data as needed
       console.log('Response:', data);
       this.outputFormats = data || [];
     } catch (error) {
@@ -231,7 +282,7 @@ export class CodeAuditorComponent implements OnInit {
     try {
       const data: string = await lastValueFrom(this.http.post<string>(url, null, { responseType: 'text' as 'json' }));
       // Handle the response data as needed
-      this.routineCode = data;      
+      this.routineCode = data;
     } catch (error) {
       console.error(error);
       alert('Failed to fetch GetRoutineByName');
@@ -247,8 +298,8 @@ export class CodeAuditorComponent implements OnInit {
         (data) => {
           this.SAIPreRungAnalysis = data.preRungAnalysis;
           this.SAIRungAnalysis = data.rungAnalysis;
-          console.log('SAIRungAnalysis:', this.SAIRungAnalysis);
-          console.log('data:', data);
+          //console.log('SAIRungAnalysis:', this.SAIRungAnalysis);
+          //console.log('data:', data);
           this.setCurrentRung();
           this.loading = false;
           resolve();
@@ -291,6 +342,100 @@ export class CodeAuditorComponent implements OnInit {
         }
       );
     });
+  }
+
+  async extractRungsFromPdf(): Promise<string[]> {
+    this.loading = true;
+    try {
+      // Change the file extension for .pdf (The same file must be in the same folder of .L5X)
+      const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
+      //console.log("Caminho PDF: ", pdfFilePath);
+
+      // Makes the API URL with parameters PLCFilePath e routineName
+      const url = `https://localhost:7070/extract-rungs?plcFilePath=${encodeURIComponent(pdfFilePath)}&routineName=${encodeURIComponent(this.routineName)}`;
+
+      // Log para verificar o URL
+      //console.log("URL da requisição: ", url);
+
+      // Send the GET req and awaits
+      const response = await lastValueFrom(this.http.get<{ imageUrls: string[] }>(url));
+      //console.log('Image URLs:', response.imageUrls);
+
+      // Check if the images are being returned
+      if (response.imageUrls && response.imageUrls.length > 0) {
+        return response.imageUrls; // Return the URLs array
+      } else {
+        alert('Nenhuma imagem encontrada na pasta temporária.');
+        return []; // Returns an empty array in case of error
+      }
+    } catch (error) {
+      //console.error('Erro ao extrair rungs do PDF:', error);
+      alert('Falha ao extrair rungs do PDF');
+      return []; // In case of Error, it displays an empty array
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Load the images based on the URLs
+  private async loadTemporaryImages(imageUrls: string[]): Promise<void> {
+    try {
+      // Stores de URLs list navigation
+      this.temporaryImages = imageUrls;
+      this.currentImageIndex = 0;
+      this.updateCurrentImagePath(); // Update the image displayed
+    } catch (error) {
+      alert('Failed to load images from temporary directory');
+    }
+  }
+
+  // Update the current image path for the displayed image
+  private updateCurrentImagePath(): void {
+    if (this.temporaryImages && this.temporaryImages.length > 0) {
+      this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
+    }
+  }
+
+  // Navigate to the next image
+  nextImage(): void {
+    if (this.currentImageIndex < this.temporaryImages.length - 1) {
+      this.currentImageIndex++;
+      this.updateCurrentImagePath();
+    } else {
+      alert('No more images to display.');
+    }
+  }
+
+  previousImage(): void {
+    if (this.currentImageIndex > 0) {
+      this.currentImageIndex--;
+      this.updateCurrentImagePath();
+    }
+  }
+
+  // Delete temporary images after usage
+  deleteTemporaryImages() {
+    this.http.delete('https://localhost:7070/delete-images', {
+      responseType: 'text'
+    }).subscribe({
+      next: (response) => {
+        console.log('Temporary images deleted successfully: ', response);
+      },
+      error: (error) => {
+        console.error('Error deleting temporary images:', error);
+      }
+    });
+  }
+
+  // Close the pop-up alert
+  closeAlert() {
+    this.showAlert = false;
+  }
+
+  // Display customized pop-up message
+  displayAlert(message: string) {
+    this.alertMessage = message;
+    this.showAlert = true;
   }
 
 }
