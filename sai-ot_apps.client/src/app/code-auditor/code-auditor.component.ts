@@ -61,6 +61,9 @@ export class CodeAuditorComponent implements OnInit {
   currentImageIndex: number = 0;
   currentImagePath: string | undefined;  // Caminho da imagem atual
   analysisCompleted: boolean = false; // Controle do alerta de sucesso
+  // Declara a variável showAlert
+  showAlert = false;
+  alertMessage = 'Rung Analysis Completed!';
 
   constructor(
     private http: HttpClient,
@@ -352,7 +355,11 @@ export class CodeAuditorComponent implements OnInit {
         this.progress = 100;
         this.currentRung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
         this.codeGenForm.patchValue({ newDescription: '' });
-        alert('Rung Analysis Completed');
+        if (this.progress == 100) {
+          this.showAlert = true; // Exibe o alerta quando o progresso atinge 100
+          //this.displayAlert('Rung Analysis Completed!');
+        }
+        //alert('Rung Analysis Completed');
 
         // Atualiza a rotina com os comentários
         this.UpdateRoutineWithComments(this.PLCFilePath, this.routineName, this.RoutineDescriptionRevised);
@@ -698,5 +705,15 @@ export class CodeAuditorComponent implements OnInit {
     });
   }
 
+  // Método para fechar o alerta pop-up
+  closeAlert() {
+    this.showAlert = false;
+  }
+
+  // Exibe o pop-up com uma mensagem customizada
+  displayAlert(message: string) {
+    this.alertMessage = message;
+    this.showAlert = true;
+  }
 
 }

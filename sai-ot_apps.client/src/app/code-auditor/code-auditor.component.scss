@@ -8,6 +8,19 @@
   margin: 0;
 }
 
+/* Estilo de alerta que aparece no topo da página */
+.custom-alert {
+  position: fixed;
+  top: 20px; /* Ajuste a distância do topo */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050; /* Garantia de que o alerta fique acima de outros elementos */
+  width: auto;
+  max-width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
 /*textarea {
   overflow: hidden;*/ /* Hide scrollbars */
   /*resize: none;*/ /* Prevent manual resizing */

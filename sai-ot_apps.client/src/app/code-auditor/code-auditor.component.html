@@ -5,6 +5,13 @@
     </div>
   </div>
 
+  <!-- Alerta no topo da tela com botão "OK" -->
+  <div *ngIf="showAlert" class="alert alert-success custom-alert" role="alert">
+    <p>Rung Analysis Completed!</p>
+    <button type="button" class="btn btn-success btn-sm" (click)="closeAlert()">OK</button>
+  </div>
+
+
   <div class="row info-description mb-4">
     This program is responsible for auditing PLC code based on established standards and AI-driven analysis.
   </div>
