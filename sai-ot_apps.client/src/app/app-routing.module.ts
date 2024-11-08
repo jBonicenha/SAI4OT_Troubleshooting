@@ -7,6 +7,7 @@ import { CodeConverterComponent } from './code-converter/code-converter.componen
 import { DiagramGeneratorComponent } from './diagram-generator/DiagramGeneratorComponent';
 import { CodeAuditorComponent } from './code-auditor/code-auditor.component';
 import { CodeTesterComponent } from './code-tester/code-tester.component';
+import { CodeGeneratorComponent } from './code-generator/code-generator.component';
 
 const routes: Routes = [
   { path: '', component: MainPageComponent },
@@ -14,7 +15,8 @@ const routes: Routes = [
   { path: 'troubleshooting', component: TroubleshootingComponent },
   { path: 'code-converter', component: CodeConverterComponent },
   { path: 'code-auditor', component: CodeAuditorComponent },
-  { path: 'code-tester', component: CodeTesterComponent }
+  { path: 'code-tester', component: CodeTesterComponent },
+  { path: 'code-generator', component: CodeGeneratorComponent }
 ];
 
 @NgModule({

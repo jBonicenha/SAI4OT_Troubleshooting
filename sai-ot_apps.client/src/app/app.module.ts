@@ -15,6 +15,7 @@ import { DiagramGeneratorComponent } from './diagram-generator/DiagramGeneratorC
 import { CodeAuditorComponent } from './code-auditor/code-auditor.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { CodeTesterComponent } from './code-tester/code-tester.component';
+import { CodeGeneratorComponent } from './code-generator/code-generator.component';
 
 
 @NgModule({ declarations: [
@@ -25,7 +26,8 @@ import { CodeTesterComponent } from './code-tester/code-tester.component';
         TroubleshootingComponent,
         CodeConverterComponent,
         CodeAuditorComponent,
-        CodeTesterComponent
+        CodeTesterComponent,
+        CodeGeneratorComponent
     ],
     bootstrap: [AppComponent],
     imports: [BrowserModule,

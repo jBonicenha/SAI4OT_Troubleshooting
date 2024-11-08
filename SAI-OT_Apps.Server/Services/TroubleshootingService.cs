@@ -227,7 +227,7 @@ namespace SAI_OT_Apps.Server.Services
                     // Read the value of the node
                     for (int i = 0; i < tagList.Count; i++)
                     {
-                        var nodeId = new NodeId("ns=2;s=::[SAI_PLC_FT]Program:MainProgram." + tagList[i]);
+                        var nodeId = new NodeId($"ns=2;s=::[SAI_APP]Program:MainProgram." + tagList[i]);
                         var value = session.ReadValue(nodeId);
                         string auxTemp = tagList[i].ToString() + " = " + value.Value.ToString();
                         concatTags += auxTemp + "\n";

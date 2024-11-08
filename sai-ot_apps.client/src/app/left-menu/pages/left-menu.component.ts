@@ -21,7 +21,7 @@ export class LeftMenuComponent {
     { id: "sai-ot", name: 'SAI OT Apps', parent: null },
 
     { name: 'Network Diagram', link: "diagram-generator", parent: "sai-ot" },
-    { name: 'PLC Code Generator', link: "diagram-generator", parent: "sai-ot" },
+    { name: 'PLC Code Generator', link: "code-generator", parent: "sai-ot" },
     { name: 'PLC Code Auditor', link: "code-auditor", parent: "sai-ot" },
     { name: 'PLC Troubleshooting', link: "troubleshooting", parent: "sai-ot" },
     { name: 'Code Converter (Ignition)', link: "code-converter", parent: "sai-ot" },
