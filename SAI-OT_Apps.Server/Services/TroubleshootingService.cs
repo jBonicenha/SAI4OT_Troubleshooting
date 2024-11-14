@@ -13,6 +13,8 @@ using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using System.Xml.Linq;
 using System.Text;
 
+using TS = SAI_OT_Apps.Server.Libraries.TroubleshootingLibrary;
+
 
 namespace SAI_OT_Apps.Server.Services
 
@@ -25,7 +27,24 @@ namespace SAI_OT_Apps.Server.Services
         {
             _apiKey = configuration["apiKey"];
         }
-        public async Task<List<string>> TroubleshootingProgram(string OTETag)
+        public async Task<Dictionary<string, object>> TroubleshootingProgram(string OTETagName)
+        {
+            Dictionary<string, object> troubleshootingResult = new Dictionary<string, object>();
+            string xmlFilePath = @"C:\Users\matheus.pereira\OneDrive - Stefanini\Documents\Dev\SAI\PLC\SAI_APP.L5X";
+
+            try
+            {
+                // Execute troubleshooting main code
+                troubleshootingResult = await TS.Troubleshooting(xmlFilePath, OTETagName);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error while executing the TroubleshootingProgram: {ex.Message}");
+            }
+
+            return troubleshootingResult;
+        }
+        public async Task<List<string>> TroubleshootingProgram__(string OTETag)
         {
             List<string> allWrongTagsFormatted = new List<string>();
             try
@@ -177,83 +196,25 @@ namespace SAI_OT_Apps.Server.Services
         }
 
         //OPC UA Client - Based a tag list, connect to OPC UA Server and read the current values
-        async static public Task<string> OPCClient(List<string> tagList)
+        public async static Task<string> OPCClient(List<string> tagList)
         {
+            Dictionary<string, object> tagValues = new Dictionary<string, object>();
+            string concatTagValues = "";
 
+            //Read the tag values
+            tagValues = await TS.OPCClient(tagList);
 
-            // Define the application configuration
-            var config = new ApplicationConfiguration()
+            //Build the tag list text (tag=value)
+            if (tagValues != null)
             {
-                ApplicationName = "OPCUAClient",
-                ApplicationType = ApplicationType.Client,
-                SecurityConfiguration = new SecurityConfiguration
+                foreach (var (tag, value) in tagValues.ToList())
                 {
-                    ApplicationCertificate = new CertificateIdentifier()
-                },
-                TransportConfigurations = new TransportConfigurationCollection(),
-                TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
-                ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
-            };
+                    concatTagValues += $"{tag}={value}\n";
 
-            // Validate the application configuration
-            await config.Validate(ApplicationType.Client);
-
-            // Create an OPC UA application instance.
-            var application = new ApplicationInstance
-            {
-                ApplicationName = "OPCUAClient",
-                ApplicationType = ApplicationType.Client,
-                ApplicationConfiguration = config
-            };
-            Session session = null;
-            string concatTags = "";
-            try
-            {
-
-                // Conecta ao servidor
-                var endpointURL = "opc.tcp://192.168.226.128:4990/SAI_PLC_UAServer";
-                var selectedEndpoint = CoreClientUtils.SelectEndpoint(endpointURL, useSecurity: false);
-                var endpointConfiguration = EndpointConfiguration.Create(config);
-                var endpoint = new ConfiguredEndpoint(null, selectedEndpoint, endpointConfiguration);
-
-
-
-                // Create a session with the serverError establishing a connection: BadNotConnected
-                session = await Session.Create(config, endpoint, false, "OPCUAClient", 60000, null, null);
-
-                // Check if the session is connected
-                if (session != null && session.Connected)
-                {
-                    // Read the value of the node
-                    for (int i = 0; i < tagList.Count; i++)
-                    {
-                        var nodeId = new NodeId($"ns=2;s=::[SAI_APP]Program:MainProgram." + tagList[i]);
-                        var value = session.ReadValue(nodeId);
-                        string auxTemp = tagList[i].ToString() + " = " + value.Value.ToString();
-                        concatTags += auxTemp + "\n";
-                    }
                 }
-                else
-                {
-                    concatTags = "Error: Not connected to the server.";
-                }
-                //Close the session
-                session.Close();
-
             }
 
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine("Ocorreu um erro: " + ex.Message);
-                return null;
-            }
-            finally
-            {
-                // Close the session if it was created
-                session?.Close();
-            }
-
-            return concatTags;
+            return concatTagValues;
         }
 
         // Método que extrai as TAGs do OTE.
