@@ -52,6 +52,29 @@
         </div>
       </div>
     </form>
+
+    <!-- OPTION 2 SELECTED -->
+    <form [formGroup]="profileForm" (ngSubmit)="generateCodeAuditorInterlock()">
+      <div id="option2" *ngIf="OptionSelected === 2;">
+        <label for="selectedOption" class="col-form-label col-md-4">PLC Routines:</label>
+        <div class="mb-2">
+          <select id="selectedOption" formControlName="selectedOption" class="form-select">
+            <option *ngFor="let format of outputFormats" [value]="format">{{ format }}</option>
+          </select>
+        </div>
+        <!-- LOADING and GENERATE button -->
+        <div class="row mb-2">
+          <div class="d-flex justify-content-end" *ngIf="!loading">
+            <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+          </div>
+          <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+            <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+          </div>
+        </div>
+      </div>
+      <markdown clipboard lineNumbers class="variable-binding" [data]="SAICodeAuditorInterlock">
+      </markdown>
+    </form>
   </div>
 
   <!-- TEXT Result provided by SAI Applications -->
@@ -137,23 +160,23 @@
     </div>
   </div>
 
-  <!-- OPTION 3 SELECTED -->
-  <div id="option3" *ngIf="OptionSelected === 3;">
+    <!-- OPTION 3 SELECTED -->
+    <div id="option3" *ngIf="OptionSelected === 3;">
 
-    <!-- LOADING and GENERATE button -->
-    <form [formGroup]="profileForm" (ngSubmit)="auditUDTMain()">
-      <div class="row mb-2">
-        <div class="d-flex justify-content-end" *ngIf="!loading">
-          <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+      <!-- LOADING and GENERATE button -->
+      <form [formGroup]="profileForm" (ngSubmit)="auditUDTMain()">
+        <div class="row mb-2">
+          <div class="d-flex justify-content-end" *ngIf="!loading">
+            <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
+          </div>
+          <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+            <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+          </div>
         </div>
-        <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
-          <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
-        </div>
-      </div>
-    </form>
+      </form>
 
-    <markdown clipboard lineNumbers class="variable-binding" [data]="SAIUDTAnalysis">
-    </markdown>
-  </div>
+      <markdown clipboard lineNumbers class="variable-binding" [data]="SAIUDTAnalysis">
+      </markdown>
+    </div>
 
 </div>

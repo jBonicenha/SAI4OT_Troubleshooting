@@ -47,13 +47,17 @@ export class CodeAuditorComponent implements OnInit {
   SAIPreRungAnalysis: string = '';
   SAIUDTAnalysis: string = '';
   SAIRungAnalysis: Rung[] = [];
+  SAICodeAuditorInterlock: string | null = null;
+  file: File | null = null;
   RoutineDescriptionRevised: RungDescription[] = [];
   //SAIRungAnalysis: { [key: string]: string[] } = {};
   routineCode: string = '';
+  xmlCode: string = '';
   currentRung: Rung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
   currentIndex: number = 0;
   progress: number = 0;
   Option1Selected: boolean = false;
+  Option2Selected: boolean = false;
   OptionSelected: number = 0;
   UserSkipComment: boolean = true;
   logicImagePath: string = '';
@@ -152,7 +156,9 @@ export class CodeAuditorComponent implements OnInit {
       case 'Interlock Map Generator':
         //
         this.OptionSelected = 2;
-        this.Option1Selected = false;
+        this.Option2Selected = true;
+        this.PLCFilePath = this.profileForm.get('folderPath')?.value;
+        this.routinesList();
         break;
       case 'Equipment Auditor':
         //
@@ -283,11 +289,29 @@ export class CodeAuditorComponent implements OnInit {
       const data: string = await lastValueFrom(this.http.post<string>(url, null, { responseType: 'text' as 'json' }));
       // Handle the response data as needed
       this.routineCode = data;
+      console.log("Routine Code dentro do GetRoutine: ", this.routineCode);
     } catch (error) {
       console.error(error);
       alert('Failed to fetch GetRoutineByName');
     }
   }
+
+  /*async GetRoutine(PLCfilePath: string): Promise<void> {
+    const url = `https://localhost:7070/GetRoutine?PLCfilePath=${encodeURIComponent(PLCfilePath)}`;
+
+    try {
+      // Envia a requisição para o backend e espera pela resposta com o conteúdo XML
+      const data: string = await lastValueFrom(this.http.post<string>(url, null, { responseType: 'text' as 'json' }));
+
+      // Armazena o código de rotina recebido
+      this.xmlCode = data;
+    } catch (error) {
+      // Caso ocorra um erro, exibe a mensagem de erro
+      console.error(error);
+      alert('Failed to fetch GetRoutineByName');
+    }
+  }*/
+
 
   //SAI make the analysis based in the code provided
   async SAIDescriptionAnalysis(routineCode: string): Promise<void> {
@@ -437,5 +461,214 @@ export class CodeAuditorComponent implements OnInit {
     this.alertMessage = message;
     this.showAlert = true;
   }
+
+  onFileSelected(event: any) {
+    const fileInput = event.target as HTMLInputElement;
+    if (fileInput.files && fileInput.files.length > 0) {
+      this.file = fileInput.files[0];
+    }
+  }
+
+  /*generateCodeAuditorInterlock() {
+    if (this.file) {
+      this.SAICodeAuditorInterlock = '';
+      this.loading = true; // Inicia o carregamento
+      const url = `https://localhost:7070/upload-excel`;
+      const formData = new FormData();
+      formData.append('file', this.file, this.file.name);
+      formData.append('folderPath', this.profileForm.get('folderPath')?.value);
+
+      // Define responseType como 'blob' para lidar com arquivos binários
+      this.http.post(url, formData, { responseType: 'blob' }).subscribe(
+        (response) => {
+          // Cria um link temporário para download do CSV
+          const blob = new Blob([response], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'CodeAuditorInterlock.csv';
+          link.click();
+
+          // Limpa o estado e formulário após o download
+          this.loading = false;
+          this.profileForm.reset(); // Limpa o formulário após o sucesso, se necessário
+          this.file = null; // Reseta a variável de arquivo
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = ''; // Reseta o input de arquivo
+          }
+
+          // Revoga o objeto URL após o uso
+          window.URL.revokeObjectURL(url);
+        },
+        (error) => {
+          console.error('Error occurred:', error);
+          alert('Failed to validate and generate CodeAuditorInterlock');
+          this.loading = false;
+        }
+      );
+    } else {
+      alert('Please select a file before submitting.'); // Validação adicional
+    }
+  }*/
+
+  /*generateCodeAuditorInterlock() {
+    if (this.file) {
+      this.SAICodeAuditorInterlock = '';
+      this.loading = true; // Inicia o carregamento
+      const url = `https://localhost:7070/upload-excel`;
+      const formData = new FormData();
+      formData.append('file', this.file, this.file.name);
+      formData.append('folderPath', this.profileForm.get('folderPath')?.value);
+
+      // Define responseType como 'blob' para lidar com arquivos binários
+      this.http.post(url, formData, { responseType: 'blob' }).subscribe(
+        (data) => {
+          // Cria um blob do CSV e lê o conteúdo como texto
+          const blob = new Blob([data], { type: 'text/csv' });
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            // Armazena o conteúdo do CSV na variável csvContent
+            this.SAICodeAuditorInterlock = reader.result as string;
+            //console.log('Conteúdo do CSV:', this.SAICodeAuditorInterlock);
+          };
+
+          reader.onerror = (error) => {
+            console.error('Error reading CSV:', error);
+          };
+
+          reader.readAsText(blob);
+
+          // Limpa o estado e formulário após o download
+          this.loading = false;
+          this.profileForm.reset(); // Limpa o formulário após o sucesso, se necessário
+          this.file = null; // Reseta a variável de arquivo
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = ''; // Reseta o input de arquivo
+          }
+        },
+        (error) => {
+          console.error('Error occurred:', error);
+          alert('Failed to validate and generate CodeAuditorInterlock');
+          this.loading = false;
+        }
+      );
+    } else {
+      alert('Please select a file before submitting.'); // Validação adicional
+    }
+  }*/
+
+  /*generateCodeAuditorInterlock() {
+    if (this.file) {
+      this.SAICodeAuditorInterlock = '';
+      this.loading = true; // Inicia o carregamento
+      const url = `https://localhost:7070/upload-excel`;
+      const formData = new FormData();
+      formData.append('file', this.file, this.file.name);
+      formData.append('folderPath', this.profileForm.get('folderPath')?.value);
+
+      // Define responseType como 'text' para receber uma string no response
+      this.http.post(url, formData, { responseType: 'text' }).subscribe(
+        (data: string) => {
+          // Armazena o conteúdo da resposta em SAICodeAuditorInterlock
+          this.SAICodeAuditorInterlock = data;
+          console.log(data);
+
+          // Limpa o estado e formulário após o sucesso
+          this.loading = false;
+          this.profileForm.reset(); // Limpa o formulário após o sucesso
+          this.file = null; // Reseta a variável de arquivo
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = ''; // Reseta o input de arquivo
+          }
+        },
+        (error) => {
+          console.error('Error occurred:', error);
+          alert('Failed to validate and generate CodeAuditorInterlock');
+          this.loading = false;
+        }
+      );
+    } else {
+      alert('Please select a file before submitting.'); // Validação adicional
+    }
+  }*/
+
+  async generateCodeAuditorInterlock() {
+    this.SAICodeAuditorInterlock = '';
+    this.loading = true;
+
+    try {
+      // Verifica e carrega o routineCode se estiver vazio
+      if (!this.routineCode) {
+        await this.GetRoutineByName(this.profileForm.get('folderPath')?.value, this.profileForm.get('selectedOption')?.value);
+      }
+
+      if (!this.routineCode) {
+        alert('Routine code is still empty after fetching!');
+        return;
+      }
+
+      const url = 'https://localhost:7070/send-interlock';
+      const response = await lastValueFrom(
+        this.http.post(url, JSON.stringify(this.routineCode), {
+          headers: { 'Content-Type': 'application/json' },
+          responseType: 'text',
+        })
+      );
+
+      this.SAICodeAuditorInterlock = response;
+    } catch (error) {
+      console.error('Erro ao gerar o código do interlock:', error);
+      alert('Erro ao gerar o código do interlock. Verifique o console para mais detalhes.');
+    } finally {
+      this.loading = false;
+      this.profileForm.reset();
+    }
+  }
+
+  /*async generateCodeAuditorInterlock() {
+    this.SAICodeAuditorInterlock = '';
+    this.loading = true;
+
+    try {
+      // Verifica e carrega o routineCode se estiver vazio
+      if (!this.routineCode) {
+        await this.GetRoutineByName(
+          this.profileForm.get('folderPath')?.value,
+          this.profileForm.get('selectedOption')?.value
+        );
+      }
+
+      if (!this.routineCode) {
+        alert('Routine code is still empty after fetching!');
+        return;
+      }
+
+      const url = 'https://localhost:7070/send-interlock';
+
+      // Ajuste: Enviar a string diretamente sem usar JSON.stringify
+      const response = await lastValueFrom(
+        this.http.post(url, { routineCode: this.routineCode }, {
+          headers: { 'Content-Type': 'application/json' },
+          responseType: 'text',
+        })
+      );
+
+      this.SAICodeAuditorInterlock = response;
+    } catch (error) {
+      console.error('Erro ao gerar o código do interlock:', error);
+      alert('Erro ao gerar o código do interlock. Verifique o console para mais detalhes.');
+    } finally {
+      this.loading = false;
+      this.profileForm.reset();
+    }
+  }*/
+
+
+
+
 
 }

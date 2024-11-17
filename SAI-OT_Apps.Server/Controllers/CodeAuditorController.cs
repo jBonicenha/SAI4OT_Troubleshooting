@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SAI_OT_Apps.Server.Services;
+using static SAI_OT_Apps.Server.Controllers.CodeAuditorController;
 
 namespace SAI_OT_Apps.Server.Controllers
 {
@@ -48,6 +49,30 @@ namespace SAI_OT_Apps.Server.Controllers
                 // Log the exception (you can use any logging framework)
                 Console.WriteLine(ex.Message);
                 return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+        }
+
+        [HttpPost("GetRoutine")]
+        public async Task<IActionResult> GetRoutine([FromQuery] string PLCfilePath)
+        {
+            if (string.IsNullOrEmpty(PLCfilePath))
+            {
+                return BadRequest("PLC file path cannot be empty.");
+            }
+
+            try
+            {
+                // Lê o conteúdo do arquivo XML a partir do caminho fornecido
+                string xmlContent = System.IO.File.ReadAllText(PLCfilePath);
+
+                // Retorna o conteúdo XML como string
+                return Ok(xmlContent);
+            }
+            catch (Exception ex)
+            {
+                // Retorna erro se não conseguir ler o arquivo
+                Console.WriteLine($"Erro ao ler o arquivo XML: {ex.Message}");
+                return StatusCode(500, "Erro ao ler o arquivo XML.");
             }
         }
 
@@ -191,6 +216,84 @@ namespace SAI_OT_Apps.Server.Controllers
             }
         }
 
-    }
+        /*[HttpPost("upload-excel")]
+        public async Task<IActionResult> UploadExcel([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
 
+            // Chama a service para converter a planilha
+            string csvFilePath;
+            using (var stream = file.OpenReadStream())
+            {
+                csvFilePath = _codeAuditorServiceUDT.ConvertExcelToCsv(stream);
+            }
+
+            // Lê o arquivo CSV e o retorna como um download
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(csvFilePath);
+
+            // Remove o arquivo temporário após o download
+            System.IO.File.Delete(csvFilePath);
+
+            var csvResult = File(fileBytes, "text/csv", $"{Path.GetFileNameWithoutExtension(file.FileName)}.csv");
+
+            var saiCodeAuditorInterlockResult = await _codeAuditorServiceUDT.SAICodeAuditorInterlockUDT(csvResult);
+        }*/
+
+        /*[HttpPost("upload-excel")]
+        public async Task<IActionResult> UploadExcel([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            // Chama a service para converter a planilha e obter o caminho do CSV
+            string csvFilePath;
+            using (var stream = file.OpenReadStream())
+            {
+                csvFilePath = _codeAuditorServiceUDT.ConvertExcelToCsv(stream);
+            }
+
+            // Lê o conteúdo do arquivo CSV como uma string
+            string csvContent = await System.IO.File.ReadAllTextAsync(csvFilePath);
+
+            // Remove o arquivo temporário após a leitura
+            System.IO.File.Delete(csvFilePath);
+            Console.WriteLine(csvContent);
+
+            var saiCodeInterlockResult = await _codeAuditorServiceUDT.SAICodeAuditorInterlockUDT(csvContent);
+
+            // Retorna o conteúdo do CSV como JSON
+            return Ok(saiCodeInterlockResult);
+        }*/
+
+        [HttpPost("send-interlock")]
+        public async Task<IActionResult> SendInterlock([FromBody] string routineCode)
+        {
+            if (string.IsNullOrEmpty(routineCode))
+            {
+                return BadRequest("Routine code cannot be empty.");
+            }
+
+            try
+            {
+                // Verificar se routineCode não está vazio ou nulo
+                Console.WriteLine($"Received routine code: {routineCode}");
+
+                // Chama o serviço para processar o código interlock
+                var saiCodeInterlockResult = await _codeAuditorServiceUDT.SAICodeAuditorInterlockUDT(routineCode);
+
+                // Verifique se o resultado está vazio
+                Console.WriteLine($"Result from service: {saiCodeInterlockResult}");
+
+                return Ok(saiCodeInterlockResult);
+            }
+            catch (Exception ex)
+            {
+                // Capture e logue o erro
+                Console.WriteLine($"Error occurred: {ex.Message}");
+                return StatusCode(500, "Erro ao processar o código interlock.");
+            }
+        }
+
+    }
 }
