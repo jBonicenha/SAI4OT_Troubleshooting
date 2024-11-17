@@ -52,7 +52,7 @@ export class TroubleshootingComponent implements OnInit {
     {
       //Otherwise, save in the globalOTETag variable
       this.globalOTETag = OTETagMessage || '';
-      this.globalOTETag = this.globalOTETag.toUpperCase();
+      this.globalOTETag = this.globalOTETag; //this.globalOTETag.toUpperCase();
       this.messages.push({ user: 'Server', text: 'Based on your request, I will analyze the logic for tag: ' + this.globalOTETag, showFormattedContent: false, formattedContent: '' });
 
       //Based in the messsage sent by user check if will be needed "Troubleshooting" or "CodeExplainer"
@@ -90,7 +90,7 @@ export class TroubleshootingComponent implements OnInit {
       return data || '';
     } catch (error) {
       console.error(error);
-      alert('Failed to fetch SAITroubleshootingMenu');
+      alert('Failed to fetch SAITroubleshootingChatRequest.');
       return '';
     }
   }
@@ -105,7 +105,7 @@ export class TroubleshootingComponent implements OnInit {
       this.troubleshootingResultList = data || '';
     } catch (error) {
       console.error(error);
-      alert('Failed to fetch getTroubleshootingResult');
+      alert('Failed to fetch getTroubleshootingResult.');
     }
   }
 
@@ -120,7 +120,7 @@ export class TroubleshootingComponent implements OnInit {
       },
       (error) => {
         console.error(error);
-        alert('Failed to fetch getTroubleshootingResult');
+        alert('Failed to fetch SAITroubleshootingChatResult.');
       }
     );
   }
@@ -134,7 +134,7 @@ export class TroubleshootingComponent implements OnInit {
       },
       (error) => {
         console.error(error);
-        alert('Failed to fetch getTroubleshootingResult');
+        alert('Failed to fetch SAITroubleshootingCodeExplainer.');
       }
     );
   }
@@ -149,7 +149,7 @@ export class TroubleshootingComponent implements OnInit {
       this.SAITroubleshootingMenuResult = data || '';
     } catch (error) {
       console.error(error);
-      alert('Failed to fetch SAITroubleshootingMenu');
+      alert('Failed to fetch SAITroubleshootingMenu.');
     }
   }
 
@@ -170,7 +170,7 @@ export class TroubleshootingComponent implements OnInit {
 
     } catch (error) {
       console.error(error);
-      alert('Failed to fetch SAITroubleshootingMenu');
+      alert('Failed to fetch OPCClient.');
       return false;
     }
   }

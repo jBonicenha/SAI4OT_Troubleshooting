@@ -20,7 +20,7 @@ namespace SAI_OT_Apps.Server.Controllers
         [HttpPost("TroubleshootingProgram")]
         public async Task<IActionResult> TroubleshootingProgram([FromQuery] string OTETag)
         {
-            List<string> result = new List<string>();
+            Dictionary<string, object> result = new Dictionary<string, object>();
             try
             {
                 result = await _troubleshootingService.TroubleshootingProgram(OTETag);
