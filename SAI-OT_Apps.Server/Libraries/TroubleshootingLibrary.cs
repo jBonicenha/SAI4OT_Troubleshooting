@@ -91,9 +91,9 @@ namespace SAI_OT_Apps.Server.Libraries
         public async static Task<Dictionary<string, object>> OPCClient(List<string> tagNamesList)
         {
             //OPC configuration (by user)
-            string endpointURL = "opc.tcp://192.168.68.119:4990/SAI_APP";
-            string deviceName = "SAI_PLC";
-            string programPath = ""; //Add a point at the end (like Program:MainProgram.).
+            string endpointURL = "opc.tcp://192.168.226.128:4990/SAI_PLC_UAServer";
+            string deviceName = "SAI_APP";
+            string programPath = "Program:MainProgram."; //Add a point at the end (like Program:MainProgram.).
 
             string aplicationName = "SAI_APP";
             string aplicationInstanceName = "SAI_APP";

@@ -30,7 +30,7 @@ namespace SAI_OT_Apps.Server.Services
         public async Task<Dictionary<string, object>> TroubleshootingProgram(string OTETagName)
         {
             Dictionary<string, object> troubleshootingResult = new Dictionary<string, object>();
-            string xmlFilePath = @"C:\Users\matheus.pereira\OneDrive - Stefanini\Documents\Dev\SAI\PLC\SAI_APP.L5X";
+            string xmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
 
             try
             {

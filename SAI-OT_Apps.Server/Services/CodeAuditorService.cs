@@ -213,7 +213,7 @@ namespace SAI_OT_Apps.Server.Services
             }
             else
             {
-                throw new Exception("API SAINetworkAnalysis failed!");
+                throw new Exception("API SAIDescriptionAnalysis failed!");
             }
 
 
@@ -608,8 +608,6 @@ namespace SAI_OT_Apps.Server.Services
                 throw new Exception($"An error occurred: {ex.Message}");
             }
         }
-
-
         private static Image<Rgba32> RenderPageAsImage(PdfiumPdfDocument pdf, int pageIndex, double dpi)
         {
             try

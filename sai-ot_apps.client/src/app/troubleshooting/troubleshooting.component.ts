@@ -115,7 +115,8 @@ export class TroubleshootingComponent implements OnInit {
       async (data) => {
         // If the count is greater than 30, push to messages
         this.troubleshootingResultMessage = data || '';
-        this.messages.push({ user: 'Server', text: this.troubleshootingResultMessage, showFormattedContent: false, formattedContent: '' });
+        //this.messages.push({ user: 'Server', text: this.troubleshootingResultMessage, showFormattedContent: false, formattedContent: '' });
+        this.messages.push({ user: 'Server', text: '', showFormattedContent: true, formattedContent: this.troubleshootingResultMessage });
         console.log('Response:', data);
       },
       (error) => {
