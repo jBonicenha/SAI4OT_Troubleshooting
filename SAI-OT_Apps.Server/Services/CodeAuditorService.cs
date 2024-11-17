@@ -22,6 +22,9 @@ using ImageSharpRectangle = SixLabors.ImageSharp.Rectangle;
 using System.Runtime.Intrinsics.Arm;
 using System.Drawing.Imaging;
 using SixLabors.ImageSharp.Formats.Png;
+using ExcelDataReader;
+using System.Data;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 
 namespace SAI_OT_Apps.Server.Services
@@ -122,6 +125,24 @@ namespace SAI_OT_Apps.Server.Services
 
             return null;
         }
+
+        /*public string GetRoutine(string PLCfilePath)
+        {
+            try
+            {
+                // Lê o conteúdo do arquivo XML no caminho fornecido
+                string xmlContent = System.IO.File.ReadAllText(PLCfilePath);
+
+                // Retorna o conteúdo XML como string
+                return xmlContent;
+            }
+            catch (Exception ex)
+            {
+                // Caso ocorra algum erro ao ler o arquivo, exibe a mensagem de erro
+                Console.WriteLine($"Erro ao ler o arquivo XML: {ex.Message}");
+                return null;
+            }
+        }*/
 
         public string UpdateRoutineWithComments(string PLCfilePath, string routineName, List<RungDescription> RoutineDescriptionRevised)
         {
@@ -681,6 +702,134 @@ namespace SAI_OT_Apps.Server.Services
             {
                 //Console.WriteLine("Folder not found.");
             }
+        }
+
+        public async Task<string> SAICodeAuditorInterlockUDT(string xmlContent)
+        {
+            var apiKey = _apiKey; // TODO: Replace with your API key
+            Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT: " + xmlContent);
+            var teste = xmlContent.ToString();
+            Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT to string: " + teste);
+
+            var client = new RestClient("https://sai-library.saiapplications.com");
+            var request = new RestRequest("api/templates/671fd851c05a8b6c9ed1eb71/execute", Method.Post)
+                .AddBody(new
+                {
+                    inputs = new Dictionary<string, string>
+                    {
+                        ["request"] = teste //xmlContent
+                    }
+                })
+                .AddHeader("X-Api-Key", apiKey)
+                .AddHeader("Authorization", $"Bearer {_apiKey}")
+                .AddHeader("Content-Type", "application/json");
+                //.AddParameter("application/xml", xmlContent, ParameterType.RequestBody);
+
+            Console.WriteLine("request: " + request);
+            using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+            {
+                try
+                {
+                    var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
+                    Console.WriteLine("Response Content: " + response.Content);
+                    if (response.IsSuccessful)
+                    {
+                        string SAICodeAuditorInterlockUDTResult = System.Text.Json.JsonSerializer.Deserialize<string>(response.Content);
+                        return SAICodeAuditorInterlockUDTResult;
+                    }
+                    else
+                    {
+                        throw new Exception("API SAICodeAuditorInterlockUDT failed!");
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    Console.WriteLine("A requisição foi cancelada devido ao timeout.");
+                    return null; // Retorna null ou outro valor adequado
+                }
+            }
+
+            return null; // Retorna null caso a requisição falhe
+        }
+
+        /*public async Task<string> SAICodeAuditorInterlockUDT(string xmlContent)
+        {
+            var apiKey = _apiKey;
+            Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT: " + xmlContent);
+
+            var client = new RestClient("https://sai-library.saiapplications.com");
+            var request = new RestRequest("api/templates/671fd851c05a8b6c9ed1eb71/execute", Method.Post)
+                .AddHeader("X-Api-Key", apiKey)
+                .AddHeader("Authorization", $"Bearer {_apiKey}")
+                .AddHeader("Content-Type", "application/json")
+                .AddBody(new
+                {
+                    inputs = new Dictionary<string, string>
+                    {
+                        ["request"] = xmlContent
+                    }
+                });
+
+            Console.WriteLine("request: " + request);
+
+            using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+            {
+                try
+                {
+                    var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
+                    Console.WriteLine("Response Content: " + response.Content);
+                    Console.WriteLine("Status Code: " + response.StatusCode);
+                    Console.WriteLine("Response Headers: " + response.Headers);
+                    Console.WriteLine("Error Message: " + response.ErrorMessage);
+                    Console.WriteLine("Raw Response: " + response.RawBytes);
+
+                    if (response.IsSuccessful)
+                    {
+                        return response.Content; // Retorna o conteúdo direto
+                    }
+                    else
+                    {
+                        throw new Exception("API SAICodeAuditorInterlockUDT failed!");
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    Console.WriteLine("A requisição foi cancelada devido ao timeout.");
+                    return null;
+                }
+            }
+        }*/
+
+
+
+
+        public string ConvertExcelToCsv(Stream excelStream)
+        {
+            // Registra o provedor de codificação para suportar o encoding 1252
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+            // Defina o caminho temporário para salvar o CSV
+            string tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.csv");
+
+            using (var reader = ExcelReaderFactory.CreateReader(excelStream))
+            using (var writer = new StreamWriter(tempFilePath))
+            {
+                // Lê as planilhas do Excel para um DataSet
+                var result = reader.AsDataSet();
+
+                // Assume que queremos apenas a primeira planilha
+                var dataTable = result.Tables[0];
+
+                // Escreve os dados da planilha no arquivo CSV
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    var fields = row.ItemArray.Select(field =>
+                        field.ToString().Replace(",", ";")); // Substitui vírgulas para evitar conflitos no CSV
+                    writer.WriteLine(string.Join(",", fields));
+                }
+            }
+
+            return tempFilePath;
         }
     }
 }
