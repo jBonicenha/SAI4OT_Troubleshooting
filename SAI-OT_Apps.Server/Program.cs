@@ -21,6 +21,7 @@ builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeTesterService>();
 builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeAuditorService>();
 builder.Services.AddSingleton<SAI_OT_Apps.Server.Services.CodeAuditorServiceUDT>(); //Deve ser singleton por conta da service de deleção
 builder.Services.AddScoped<SAI_OT_Apps.Server.Services.TroubleshootingService>();
+builder.Services.AddScoped<SAI_OT_Apps.Server.Services.CodeGeneratorService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
