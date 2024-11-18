@@ -21,6 +21,39 @@
   text-align: center;
 }
 
+/*.styled-table table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.styled-table table, .styled-table th, .styled-table td {
+  border: 1px solid black;
+}
+
+.styled-table th, .styled-table td {
+  padding: 8px;
+  text-align: center;
+}*/
+
+markdown ::ng-deep {
+  table {
+    border-collapse: collapse; /* Para que as bordas fiquem coladas */
+    width: 100%; /* Opcional: para definir a largura da tabela */
+  }
+
+  th, td {
+    border: 1px solid black; /* Bordas para células e cabeçalhos */
+    padding: 8px; /* Espaçamento interno */
+    text-align: left; /* Alinhamento do texto */
+  }
+
+  th {
+    background-color: #f2f2f2; /* Cor de fundo para cabeçalhos (opcional) */
+  }
+}
+
+
+
 /*textarea {
   overflow: hidden;*/ /* Hide scrollbars */
 /*resize: none;*/ /* Prevent manual resizing */
