@@ -1,7 +1,18 @@
 /* Estilo principal do layout */
+.sticky-top {
+  background-color: white;
+  position: sticky;
+}
+
+.info-description {
+  color: #666;
+  margin: 0;
+}
+
+
 .container-fluid {
-  max-width: 100vw; /* Limita a largura do container */
-  overflow-x: hidden; /* Impede o overflow horizontal do container */
+  max-width: 100vw;  //Limita a largura do container 
+  overflow-x: hidden;  //Impede o overflow horizontal do container 
 }
 
 .limited-width {
@@ -13,28 +24,29 @@
   box-sizing: border-box;
 }
 
-.row {
+/*.row {
   max-width: 100vw;
   overflow-x: hidden;
-}
+}*/
 
 /* Limita largura do formulário e do contêiner XML */
-form, .xml-container {
+/*form, .xml-container {
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
   overflow: hidden;
 }
-
+*/
 .xml-container {
-  width: 100%; /* A largura fica restrita ao contêiner pai */
-  max-height: 400px; /* Altura fixa com rolagem */
-  overflow: auto; /* Permite rolagem para conteúdo extenso */
-  border: 1px solid #ddd;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 5px;
-  box-sizing: border-box;
+  max-width: 100%; /* A largura fica restrita ao contêiner pai */
+  width: 1200px;
+  //max-height: 400px; /* Altura fixa com rolagem */
+  overflow-x: auto; /* Permite rolagem para conteúdo extenso */
+  //border: 1px solid #ddd;
+  //padding: 10px;
+  //background-color: #f9f9f9;
+  //border-radius: 5px;
+  //box-sizing: border-box;
 }
 
 /* Elementos de entrada */

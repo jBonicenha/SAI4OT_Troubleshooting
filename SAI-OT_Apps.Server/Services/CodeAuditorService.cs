@@ -706,8 +706,8 @@ namespace SAI_OT_Apps.Server.Services
         {
             var apiKey = _apiKey; // TODO: Replace with your API key
             Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT: " + xmlContent);
-            var teste = xmlContent.ToString();
-            Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT to string: " + teste);
+            //string teste = xmlContent.ToString();
+            //Console.WriteLine("Dentro do SAICodeAuditorInterlockUDT to string: " + teste);
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/671fd851c05a8b6c9ed1eb71/execute", Method.Post)
@@ -715,7 +715,7 @@ namespace SAI_OT_Apps.Server.Services
                 {
                     inputs = new Dictionary<string, string>
                     {
-                        ["request"] = teste //xmlContent
+                        ["request"] = xmlContent
                     }
                 })
                 .AddHeader("X-Api-Key", apiKey)

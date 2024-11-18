@@ -8,8 +8,10 @@
   <!-- Alert on top with "OK" button -->
   <div *ngIf="showAlert" class="alert alert-success custom-alert" role="alert">
     <p>Rung Analysis Completed!</p>
+    <p>A new PLC file with comments has been generated.</p>
     <button type="button" class="btn btn-success btn-sm" (click)="closeAlert()">OK</button>
   </div>
+
 
 
   <div class="row info-description mb-4">
@@ -160,23 +162,24 @@
     </div>
   </div>
 
-    <!-- OPTION 3 SELECTED -->
-    <div id="option3" *ngIf="OptionSelected === 3;">
+  <!-- OPTION 3 SELECTED -->
+  <div id="option3" *ngIf="OptionSelected === 3;">
 
-      <!-- LOADING and GENERATE button -->
-      <form [formGroup]="profileForm" (ngSubmit)="auditUDTMain()">
-        <div class="row mb-2">
-          <div class="d-flex justify-content-end" *ngIf="!loading">
-            <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
-          </div>
-          <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
-            <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
-          </div>
+    <!-- LOADING and GENERATE button -->
+    <form [formGroup]="profileForm" (ngSubmit)="auditUDTMain()">
+      <div class="row mb-2">
+        <div class="d-flex justify-content-end" *ngIf="!loading">
+          <button type="submit" class="btn btn-primary" [disabled]="!profileForm.valid || loading">Generate</button>
         </div>
-      </form>
+        <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+          <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1">Loading...</span>
+        </div>
+      </div>
+    </form>
 
-      <markdown clipboard lineNumbers class="variable-binding" [data]="SAIUDTAnalysis">
-      </markdown>
+    <div class="xml-container">
+      <markdown [data]="SAIUDTAnalysis"></markdown>
     </div>
+  </div>
 
 </div>

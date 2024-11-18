@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, Input, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule, FormControlName, FormBuilder } from '@angular/forms';
@@ -18,7 +18,19 @@ interface RungDescription {
 @Component({
   selector: 'app-code-auditor',
   templateUrl: './code-auditor.component.html',
-  styleUrl: './code-auditor.component.scss'
+  styleUrl: './code-auditor.component.scss',
+  template: `
+		<div class="modal-header">
+			<h4 class="modal-title">Hi there!</h4>
+			<button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"></button>
+		</div>
+		<div class="modal-body">
+			<p>Hello, {{ name }}!</p>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-outline-secondary" (click)="activeModal.close('Close click')">Close</button>
+		</div>
+	`,
 })
 
 export class CodeAuditorComponent implements OnInit {
@@ -50,7 +62,6 @@ export class CodeAuditorComponent implements OnInit {
   SAICodeAuditorInterlock: string | null = null;
   file: File | null = null;
   RoutineDescriptionRevised: RungDescription[] = [];
-  //SAIRungAnalysis: { [key: string]: string[] } = {};
   routineCode: string = '';
   xmlCode: string = '';
   currentRung: Rung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
@@ -94,46 +105,53 @@ export class CodeAuditorComponent implements OnInit {
   }
 
   async auditDescriptionMain(): Promise<void> {
-    try {
-      this.progress = 0;
-      this.loading = true;
-      this.SAIPreRungAnalysis = '';
-      this.RoutineDescriptionRevised = [];
+    try
+    {
+        this.progress = 0;
+        this.loading = true;
+        this.SAIPreRungAnalysis = '';
+        this.RoutineDescriptionRevised = [];
 
-      // Get the routine value from the form
-      this.routineName = this.profileForm.get('selectedOption')?.value;
+        // Get the routine value from the form
+        this.routineName = this.profileForm.get('selectedOption')?.value;
 
-      // Check if PLCFilePath is provided
-      if (!this.PLCFilePath) {
-        throw new Error('PLC file path is required.');
+        // Check if PLCFilePath is provided
+        if (!this.PLCFilePath) {
+          throw new Error('PLC file path is required.');
+        }
+
+        // Get the routine with the specified name
+        await this.GetRoutineByName(this.PLCFilePath, this.routineName);
+
+        // Extract rungs from the PDF and get the output directory
+        const imageUrls = await this.extractRungsFromPdf();
+
+        // Check if the images were loaded and set the path for the first image
+      if (imageUrls && imageUrls.length > 0)
+      {
+          // Update `temporaryImages` with the returned URLs
+          this.temporaryImages = imageUrls;
+          this.currentImageIndex = 0;
+
+          // Set the path of the first image for display
+          this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
+      }
+      else
+      {
+          throw new Error('No images found in the temporary directory.');
       }
 
-      // Get the routine with the specified name
-      await this.GetRoutineByName(this.PLCFilePath, this.routineName);
+        // Call the description analysis function with the routine code
+        await this.SAIDescriptionAnalysis(this.routineCode);
 
-      // Extract rungs from the PDF and get the output directory
-      const imageUrls = await this.extractRungsFromPdf();
-
-      // Check if the images were loaded and set the path for the first image
-      if (imageUrls && imageUrls.length > 0) {
-        // Update `temporaryImages` with the returned URLs
-        this.temporaryImages = imageUrls;
-        this.currentImageIndex = 0;
-
-        // Set the path of the first image for display
-        this.logicImagePath = `https://localhost:7070${this.temporaryImages[this.currentImageIndex]}`;
-      } else {
-        throw new Error('No images found in the temporary directory.');
-      }
-
-      // Call the description analysis function with the routine code
-      await this.SAIDescriptionAnalysis(this.routineCode);
-
-      console.log('Logic image path:', this.logicImagePath);
-    } catch (error) {
+        console.log('Logic image path:', this.logicImagePath);
+    }
+    catch (error) {
       console.error('Error in auditDescriptionMain:', error);
       alert('An error occurred during the audit process.');
-    } finally {
+    }
+    finally
+    {
       this.loading = false;
     }
   }
@@ -223,6 +241,7 @@ export class CodeAuditorComponent implements OnInit {
         this.progress = 100;
         this.currentRung = { Rung: '', Comment: '', Logic: '', Mistake: '', Suggestion: '' };
         this.codeGenForm.patchValue({ newDescription: '' });
+        this.SAIPreRungAnalysis = '';
         if (this.progress == 100) {
           this.showAlert = true; // Display alert when progress reaches 100
           //this.displayAlert('Rung Analysis Completed!');
@@ -325,7 +344,6 @@ export class CodeAuditorComponent implements OnInit {
           //console.log('SAIRungAnalysis:', this.SAIRungAnalysis);
           //console.log('data:', data);
           this.setCurrentRung();
-          this.loading = false;
           resolve();
         },
         (error) => {
@@ -370,7 +388,8 @@ export class CodeAuditorComponent implements OnInit {
 
   async extractRungsFromPdf(): Promise<string[]> {
     this.loading = true;
-    try {
+    try
+    {
       // Change the file extension for .pdf (The same file must be in the same folder of .L5X)
       const pdfFilePath = this.PLCFilePath.replace(/\.L5X$/i, ".pdf");
       //console.log("Caminho PDF: ", pdfFilePath);
@@ -392,12 +411,12 @@ export class CodeAuditorComponent implements OnInit {
         alert('Nenhuma imagem encontrada na pasta temporária.');
         return []; // Returns an empty array in case of error
       }
-    } catch (error) {
+    }
+    catch (error)
+    {
       //console.error('Erro ao extrair rungs do PDF:', error);
       alert('Falha ao extrair rungs do PDF');
       return []; // In case of Error, it displays an empty array
-    } finally {
-      this.loading = false;
     }
   }
 

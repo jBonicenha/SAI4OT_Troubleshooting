@@ -17,10 +17,10 @@ export class CodeGeneratorComponent implements OnInit {
   //selectedOption: string = 'create'; // Opção padrão
   SAICodeGeneratorXML: string | null = null;
   // Definindo o array de opções para o menu dropdown
-  codeGeneratorMenu: string[] = ['Create Code', 'Use a Code'];
+  codeGeneratorMenu: string[] = ['Generate PLC routine code using natural language', 'Generate PLC code from a Interlock Table'];
 
   // Propriedade para armazenar a opção selecionada
-  selectedOption: string = 'Create Code'; // Opção inicial (pode ser 'Create Code')
+  selectedOption: string = ''; // Opção inicial (pode ser 'Create Code')
 
   profileForm: FormGroup = new FormGroup({
     routineName: new FormControl(null),
@@ -37,7 +37,7 @@ export class CodeGeneratorComponent implements OnInit {
       routineName: [''],
       userRequest: [''],
       //codeGeneratorOption: [this.selectedOption]
-      codeGeneratorOption: ['Create Code']
+      codeGeneratorOption: ['Generate PLC routine code using natural language']
     });
 
     this.resultForm = this.fb.group({});

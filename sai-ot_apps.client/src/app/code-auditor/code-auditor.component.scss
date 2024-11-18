@@ -8,6 +8,12 @@
   margin: 0;
 }
 
+.xml-container {
+  max-width: 100%;
+  width: 800px; /* Set your desired width here */
+  overflow-x: auto;
+}
+
 /* Alert style that appears at the top of the page */
 .custom-alert {
   position: fixed;

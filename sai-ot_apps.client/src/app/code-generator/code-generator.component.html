@@ -5,6 +5,10 @@
     </div>
   </div>
 
+  <div class="row info-description mb-4">
+    The AI-Powered PLC Code Generator automates PLC code creation from natural language descriptions, enhancing productivity and accuracy while offering simulation, customizable templates, and seamless integration for efficient automation project development.
+  </div>
+
   <!-- Menu de opções com select -->
   <label for="codeGeneratorOption" class="col-form-label col-md-4">Option:</label>
   <div class="mb-2">
@@ -19,7 +23,7 @@
   <!-- Conteúdo condicional -->
   <div class="row">
     <!-- Opção 'Create Code' -->
-    <form *ngIf="selectedOption === 'Create Code'" [formGroup]="profileForm" (ngSubmit)="generatePLCRoutine()">
+    <form *ngIf="selectedOption === 'Generate PLC routine code using natural language'" [formGroup]="profileForm" (ngSubmit)="generatePLCRoutine()">
       <div class="row mb-2">
         <label for="routineName" class="col-form-label col-md-4">Routine Name:</label>
         <div class="mb-2">
@@ -53,7 +57,7 @@
     </div>
 
     <!-- Opção 'Use a Code' -->
-    <form *ngIf="selectedOption === 'Use a Code'" [formGroup]="profileForm" (ngSubmit)="generateCodeGeneratorXML()">
+    <form *ngIf="selectedOption === 'Generate PLC code from a Interlock Table'" [formGroup]="profileForm" (ngSubmit)="generateCodeGeneratorXML()">
       <div class="row mb-2">
         <label for="file" class="col-form-label col-md-4">Upload file:</label>
         <div class="mb-2">
