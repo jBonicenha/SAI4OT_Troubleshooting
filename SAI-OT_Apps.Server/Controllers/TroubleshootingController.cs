@@ -52,12 +52,12 @@ namespace SAI_OT_Apps.Server.Controllers
         }
 
         [HttpPost("SAITroubleshootingChatResult")]
-        public async Task<IActionResult> SAITroubleshootingChatResult([FromQuery] string ogTag, string allWrongTags)
+        public async Task<IActionResult> SAITroubleshootingChatResult([FromQuery] string ogTag, string allWrongTags, string msgInput)
         {
             string result = "";
             try
             {
-                result = await _troubleshootingService.SAITroubleshootingChatResult(ogTag, allWrongTags);
+                result = await _troubleshootingService.SAITroubleshootingChatResult(ogTag, allWrongTags, msgInput);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -69,12 +69,12 @@ namespace SAI_OT_Apps.Server.Controllers
         }
 
         [HttpPost("SAITroubleshootingCodeExplainer")]
-        public async Task<IActionResult> SAITroubleshootingCodeExplainer([FromQuery] string tagName)
+        public async Task<IActionResult> SAITroubleshootingCodeExplainer([FromQuery] string tagName, string msgInput)
         {
             string result = "";
             try
             {
-                result = await _troubleshootingService.SAITroubleshootingCodeExplainer(tagName);
+                result = await _troubleshootingService.SAITroubleshootingCodeExplainer(tagName, msgInput);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -85,14 +85,31 @@ namespace SAI_OT_Apps.Server.Controllers
             }
         }
 
-        [HttpPost("SAITroubleshootingMenu")]
-        public async Task<IActionResult> SAITroubleshootingMenu([FromQuery] string msgInput)
+        [HttpPost("SAITroubleshootingConsolidatedResult")]
+        public async Task<IActionResult> SAITroubleshootingConsolidatedResult([FromQuery] string majortags, string quertag, string text)
         {
             string result = "";
             try
             {
-                result = await _troubleshootingService.SAITroubleshootingMenu(msgInput);
+                result = await _troubleshootingService.SAITroubleshootingConsolidatedResult(majortags, quertag, text);
                 return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use any logging framework)
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+        [HttpPost("SAITroubleshootingMenu")]
+        public async Task<IActionResult> SAITroubleshootingMenu([FromQuery] string msgInput)
+        {
+             try
+            {
+                var (result1, result2) = await _troubleshootingService.SAITroubleshootingMenu(msgInput);
+                return Ok(new { result1, result2 });
             }
             catch (Exception ex)
             {

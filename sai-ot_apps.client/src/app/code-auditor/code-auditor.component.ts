@@ -100,7 +100,7 @@ export class CodeAuditorComponent implements OnInit {
   async auditUDTMain(): Promise<void> {
 
     this.loading = true;//
-    await this.UDTAnalysis(this.PLCFilePath);
+    await this.UDTAnalysis(this.profileForm.get('folderPath')?.value);
 
   }
 
@@ -218,7 +218,7 @@ export class CodeAuditorComponent implements OnInit {
       // Add 'SKIP' to the comment if the user chooses to skip
       if (this.UserSkipComment) {
         const rungNumber = this.currentRung.Rung;
-        this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: 'SKIP' });
+        this.RoutineDescriptionRevised.push({ rungNumber: rungNumber, description: this.currentRung.Comment || '' });
       }
 
       // Move to the next item in the list

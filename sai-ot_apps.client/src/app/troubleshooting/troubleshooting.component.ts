@@ -18,8 +18,10 @@ export class TroubleshootingComponent implements OnInit {
   OTETagLength: number = 0;
   currentUser = 'Alice';
   SAITroubleshootingCodeExplainerResult: string = "";
+  troubleshootingConsolidatedResult: string = "";
   SAITroubleshootingMenuResult: string = "";
   textMessage: string = "";
+  loading: boolean = false;
 
   constructor(private http: HttpClient, private router: Router) { }
 
@@ -32,7 +34,7 @@ export class TroubleshootingComponent implements OnInit {
       this.SAITroubleshootingCodeExplainerResult = "";
       this.messages.push({ user: 'User', text: this.newMessage, showFormattedContent: false, formattedContent:'' });
       this.textMessage = this.newMessage;
-      //this.SAITroubleshootingChatRequest(this.newMessage);
+      this.loading = true;
       this.processingTroubleshooting();
       this.newMessage = '';
     }
@@ -40,44 +42,41 @@ export class TroubleshootingComponent implements OnInit {
 
   async processingTroubleshooting() {
 
-    //Read the message sent by user and try to extract the TAG
-    const OTETagMessage: string = await this.SAITroubleshootingChatRequest(this.newMessage);
-    //Based in the lenth try to determin if is TAG or NOT
-    this.OTETagLength = OTETagMessage.length;
-    if (this.OTETagLength > 20)
+    //Based in the messsage sent by user check if will be needed "Troubleshooting" or "CodeExplainer" and extract the main TAG
+    await this.SAITroubleshootingMenu();
+
+    //If the response was not as expected, send other message
+    if ((this.globalOTETag.length < 1 && this.SAITroubleshootingMenuResult.length < 1) || this.globalOTETag.length > 30)
     {
-      this.messages.push({ user: 'Server', text: OTETagMessage, showFormattedContent: false, formattedContent: '' });
+      this.messages.push({ user: 'Server', text: this.globalOTETag, showFormattedContent: false, formattedContent: '' });
+      this.loading = false;
     }
     else
     {
-      //Otherwise, save in the globalOTETag variable
-      this.globalOTETag = OTETagMessage || '';
-      this.globalOTETag = this.globalOTETag; //this.globalOTETag.toUpperCase();
-      this.messages.push({ user: 'Server', text: 'Based on your request, I will analyze the logic for tag: ' + this.globalOTETag, showFormattedContent: false, formattedContent: '' });
-
-      //Based in the messsage sent by user check if will be needed "Troubleshooting" or "CodeExplainer"
-      await this.SAITroubleshootingMenu();
       //If is TB "Troubleshooting"
       if (this.SAITroubleshootingMenuResult == "TB") {
-        //If the current equipment is RUNNING
+        //Check if the current equipment is RUNNING
         let OTETagRunning: boolean = await this.OPCClient();
         if (OTETagRunning)
         {
+          this.loading = false;
           this.messages.push({ user: 'Server', text: 'The equipment is running!', showFormattedContent: false, formattedContent: '' });
         }
         //If the equipment is STOPPED execute TROUBLESHOOTING
         else
         {
           await this.getTroubleshootingResult(this.globalOTETag);
-          await this.SAITroubleshootingChatResult();
+          //await this.SAITroubleshootingChatResult();
+          await this.SAITroubleshootingCodeExplainer();
+          this.SAITroubleshootingConsolidatedResult();
         }
 
       }
       //If is CE "CodeExplainer"
       else
       {
-        this.SAITroubleshootingCodeExplainer();      
-      }
+        await this.SAITroubleshootingCodeExplainer();
+      }      
     }
   }
 
@@ -105,12 +104,13 @@ export class TroubleshootingComponent implements OnInit {
       this.troubleshootingResultList = data || '';
     } catch (error) {
       console.error(error);
+      this.loading = false;
       alert('Failed to fetch getTroubleshootingResult.');
     }
   }
 
   SAITroubleshootingChatResult() {
-    const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingChatResult?ogTag=${encodeURIComponent(this.globalOTETag)}&allWrongTags=${encodeURIComponent(this.troubleshootingResultList)}`;
+    const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingChatResult?ogTag=${encodeURIComponent(this.globalOTETag)}&allWrongTags=${encodeURIComponent(this.troubleshootingResultList)}&msgInput=${encodeURIComponent(this.textMessage)}`;
     this.http.post<string>(url, null, { responseType: 'text' as 'json' }).subscribe(
       async (data) => {
         // If the count is greater than 30, push to messages
@@ -118,24 +118,43 @@ export class TroubleshootingComponent implements OnInit {
         //this.messages.push({ user: 'Server', text: this.troubleshootingResultMessage, showFormattedContent: false, formattedContent: '' });
         this.messages.push({ user: 'Server', text: '', showFormattedContent: true, formattedContent: this.troubleshootingResultMessage });
         console.log('Response:', data);
+        this.loading = false;
       },
       (error) => {
         console.error(error);
+        this.loading = false;
         alert('Failed to fetch SAITroubleshootingChatResult.');
       }
     );
   }
 
-  SAITroubleshootingCodeExplainer() {
-    const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingCodeExplainer?tagName=${encodeURIComponent(this.globalOTETag)}`;
+  async SAITroubleshootingCodeExplainer() {
+    const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingCodeExplainer?tagName=${encodeURIComponent(this.globalOTETag)}&msgInput=${encodeURIComponent(this.textMessage)}`;
+    try {
+        const data = await lastValueFrom(this.http.post<string>(url, null, { responseType: 'text' as 'json' }));
+        this.SAITroubleshootingCodeExplainerResult = data || '';
+        //this.messages.push({ user: 'Server', text: '', showFormattedContent: true, formattedContent: this.SAITroubleshootingCodeExplainerResult });
+      } catch (error) {
+        console.error(error);
+        alert('Failed to fetch SAITroubleshootingCodeExplainer.');
+      }
+  }
+
+  SAITroubleshootingConsolidatedResult() {
+    const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingConsolidatedResult?majortags=${encodeURIComponent(this.troubleshootingResultList)}&quertag=${encodeURIComponent(this.globalOTETag)}&text=${encodeURIComponent(this.SAITroubleshootingCodeExplainerResult)}`;
     this.http.post<string>(url, null, { responseType: 'text' as 'json' }).subscribe(
       async (data) => {
-        this.SAITroubleshootingCodeExplainerResult = data || '';
-        this.messages.push({ user: 'Server', text: '', showFormattedContent: true, formattedContent: this.SAITroubleshootingCodeExplainerResult });
+        // If the count is greater than 30, push to messages
+        this.troubleshootingConsolidatedResult = data || '';
+        //this.messages.push({ user: 'Server', text: this.troubleshootingResultMessage, showFormattedContent: false, formattedContent: '' });
+        this.messages.push({ user: 'Server', text: '', showFormattedContent: true, formattedContent: this.troubleshootingConsolidatedResult });
+        console.log('Response:', data);
+        this.loading = false;
       },
       (error) => {
         console.error(error);
-        alert('Failed to fetch SAITroubleshootingCodeExplainer.');
+        this.loading = false;
+        alert('Failed to fetch SAITroubleshootingConsolidatedResult.');
       }
     );
   }
@@ -144,10 +163,11 @@ export class TroubleshootingComponent implements OnInit {
   async SAITroubleshootingMenu() {
     const url = `https://localhost:7070/api/Troubleshooting/SAITroubleshootingMenu?msgInput=${encodeURIComponent(this.textMessage)}`;
     try {
-      const data = await lastValueFrom(this.http.post<string>(url, null, { responseType: 'text' as 'json' }));
+      const data = await lastValueFrom(this.http.post<{ result1: string, result2: string }>(url, null));
       // Handle the response data as needed
       console.log('Response:', data);
-      this.SAITroubleshootingMenuResult = data || '';
+      this.globalOTETag = data.result1 || '';
+      this.SAITroubleshootingMenuResult = data.result2 || ''
     } catch (error) {
       console.error(error);
       alert('Failed to fetch SAITroubleshootingMenu.');

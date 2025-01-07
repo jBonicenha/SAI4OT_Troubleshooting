@@ -273,8 +273,7 @@ namespace SAI_OT_Apps.Server.Services
             }
         }
 
-
-        public async Task<String> SAITroubleshootingChatResult(string ogTag, string allWrongTags)
+        public async Task<String> SAITroubleshootingChatResult(string ogTag, string allWrongTags, string msgInput)
         {
             var apiKey = _apiKey;
 
@@ -286,6 +285,7 @@ namespace SAI_OT_Apps.Server.Services
                     {
                         ["allWrongTags"] = allWrongTags,
                         ["ogTag"] = ogTag,
+                        ["msgInput"] = msgInput,
                     }
                 })
                 .AddHeader("X-Api-Key", apiKey);
@@ -301,12 +301,18 @@ namespace SAI_OT_Apps.Server.Services
             }
         }
 
-
         //Start here functions related to the Troubleshooting Code Explainer
-        public async Task<String> SAITroubleshootingCodeExplainer(string tagName)
+        public async Task<String> SAITroubleshootingCodeExplainer(string tagName, string msgInput)
         {
-            var apiKey = _apiKey; // TODO: Replace with your API key
-            string plcCode = troubleshootingCodeExplainerPLCExtractor(tagName);
+           var apiKey = _apiKey; // TODO: Replace with your API key
+           string plcCode = troubleshootingCodeExplainerPLCExtractor(tagName);
+           Console.WriteLine(plcCode);
+           string searchString = "SpeedCheck";
+           bool containsText = tagName.Contains(searchString);
+           if (containsText)
+           {
+                tagName = tagName.Replace("SpeedCheck.", "");
+           }
 
             var client = new RestClient("https://sai-library.saiapplications.com");
             var request = new RestRequest("api/templates/66d9d83d1a65ee616e160605/execute", Method.Post)
@@ -316,6 +322,7 @@ namespace SAI_OT_Apps.Server.Services
                     {
                         ["plc code"] = plcCode,
                         ["tag name"] = tagName,
+                        ["msgInput"] = msgInput,
                     }
                 })
                 .AddHeader("X-Api-Key", apiKey);
@@ -331,14 +338,88 @@ namespace SAI_OT_Apps.Server.Services
             }
         }
 
+        public async Task<String> SAITroubleshootingConsolidatedResult(string majortags, string quertag, string text)
+        {
+            var apiKey = _apiKey;
+
+            //majortags = "{\"SafeSpeed_On\":{\"DirectReasons\":[[\"CB_Safety_DISABLE_Cmd\"]],\"IndirectReasons\":{\"CB_Safety_DISABLE_Cmd\":{\"DirectReasons\":[[\"S_SafeSpeed_On_Status\",\"SMap_LineRun_SpeedRamped\",\"SMap_LW_LineRun_SpeedRamped\",\"S_SafeSpeed_Ref\"]],\"IndirectReasons\":{}}}}}";
+            //quertag = "SafeSpeed_On";
+            var request = new RestRequest("api/templates/6762ef957d215ce70cb58790/execute", Method.Post); //ORIGINAL
+            string searchString = "SpeedCheck";
+            string searchString1 = "INFEED_BACK_UP_BIT";
+            bool containsText = (quertag.Contains(searchString) || quertag.Contains(searchString1)) ;
+            if (containsText)
+            {
+                quertag = quertag.Replace("SpeedCheck.", "");
+                request = new RestRequest("api/templates/6764c9ca5f57a2b240c8d307/execute", Method.Post); //ALTERADA PARA AOI
+            }
+
+               var client = new RestClient("https://sai-library.saiapplications.com");
+               request
+               .AddBody(new
+                {
+                    inputs = new Dictionary<string, string>
+                    {
+                        ["majortags"] = majortags,
+                        ["quertag"] = quertag,
+                        ["text"] = text,
+                    }
+                })
+                .AddHeader("X-Api-Key", apiKey);
+            var response = await client.ExecuteAsync(request);
+            if (response.IsSuccessful)
+            {
+                string responseConsolidatedResult = System.Text.Json.JsonSerializer.Deserialize<string>(response.Content);
+                return responseConsolidatedResult;
+            }
+            else
+            {
+                throw new Exception("API Outro failed!");
+            }
+        }
+
         static string troubleshootingCodeExplainerPLCExtractor(string TagName)
         {
             try
             {
-                string XmlFilePath = @"C:\SAI\SAITroubleshooting\M70_1270_Dev.L5X";
- 
+                string XmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
+                string searchString = "SpeedCheck";
+                bool containsText = TagName.Contains(searchString);
+                if (containsText)
+                {
+                    XmlFilePath = @"C:\SAI\SAITroubleshooting\SpeedCheck.XML";
+                    TagName = TagName.Replace("SpeedCheck.", "");
+                }
+
                 // Find and process the first rung containing the OTE or OTL for the user input tag
                 string firstRung = FindFirstRung(TagName, XmlFilePath);
+                //***Replace tags
+                if (containsText)
+                {
+                    Dictionary<string, string> tags = new Dictionary<string, string>
+                    {
+                        { "ZeroSpeed_Bit", "SMap_LIneRun_ZeroSpeed"},
+                        { "SpeedEnable_Bit","SMap_LIneRun_SpeedEnable"},
+                        { "SafeSpeed_Status","S_SafeSpeed_On_Status"},
+                        { "LSpdRamped","SMap_LineRun_SpeedRamped"},
+                        { "Hold_Req5","hold_Req_TMP"},
+                        { "Hold_Req4", "hold_Req_TMP"},
+                        { "Hold_Req3", "hold_Req_TMP"},
+                        { "Hold_Req2",  "S_SLC_SafeSpeedHold"},
+                        { "Hold_Req1",  "S_SLS_SafeSpeedHold"},
+                        { "DriversEnable_Bit",  "SMap_LineRun_DrivesEnable"},
+                        { "CB_DISABLE_Cmd",   "CB_Safety_DISABLE_Cmd"},
+                    };
+
+                    foreach (var tag in tags)
+                    {
+                        if (firstRung.Contains(tag.Key))
+                        {
+                            firstRung = firstRung.Replace(tag.Key, tag.Value);
+                        }
+                    }
+                    XmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
+                }
 
                 // Collect all rungs starting with the first one
                 HashSet<string> allRungsXml = new HashSet<string> { firstRung };
@@ -369,7 +450,6 @@ namespace SAI_OT_Apps.Server.Services
                 // Output the result as a single XML text
                 string resultXml = string.Join(Environment.NewLine, allRungsXml);
                 string SAITroubleshootingCodeExplainerResult = resultXml;
-
 
                 return SAITroubleshootingCodeExplainerResult;
 
@@ -442,7 +522,7 @@ namespace SAI_OT_Apps.Server.Services
             }
         }
 
-        public async Task<String> SAITroubleshootingMenu(string msgInput)
+        public async Task<(string, string)> SAITroubleshootingMenu(string msgInput)
         {
             var apiKey = _apiKey; // TODO: Replace with your API key
 
@@ -460,7 +540,15 @@ namespace SAI_OT_Apps.Server.Services
             if (response.IsSuccessful)
             {
                 string responseTroubleshootingMenu = System.Text.Json.JsonSerializer.Deserialize<string>(response.Content);
-                return responseTroubleshootingMenu;
+                var splitResult = responseTroubleshootingMenu.Split(';');
+                if (splitResult.Length == 2)
+                {
+                    return (splitResult[0], splitResult[1]);
+                }
+                else
+                {
+                    throw new Exception("Unexpected response format!");
+                }
             }
             else
             {

@@ -10,6 +10,7 @@ using System.Xml;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using System.Globalization;
+using System.Text;
 
 namespace SAI_OT_Apps.Server.Libraries
 {
@@ -707,6 +708,15 @@ namespace SAI_OT_Apps.Server.Libraries
 
         public static string findOTERung(string xmlFilePath, string tagName)
         {
+            //
+            string searchString = "SpeedCheck";
+            bool containsText = tagName.Contains(searchString);
+            if (containsText)
+            {
+                xmlFilePath = @"C:\SAI\SAITroubleshooting\SpeedCheck.XML";
+                tagName = tagName.Replace("SpeedCheck.", "");
+            }            
+
             XmlDocument Xdoc = new XmlDocument();
             Xdoc.Load(xmlFilePath); // Load XML File. (In this case, write the correct file path from your computer).
             XmlElement root = Xdoc.DocumentElement;
@@ -737,6 +747,34 @@ namespace SAI_OT_Apps.Server.Libraries
             rung = rung.Substring(9, rung.Length - 13); // Get the data between '<![CDATA[' and ';]]>'
 
             Console.WriteLine($"Rung XML: {rung}");
+
+            //***Replace tags
+            if (containsText)
+            {
+                Dictionary<string, string> tags = new Dictionary<string, string>
+                {
+                      { "ZeroSpeed_Bit", "SMap_LIneRun_ZeroSpeed"},
+                      { "SpeedEnable_Bit","SMap_LIneRun_SpeedEnable"},
+                        { "SafeSpeed_Status","S_SafeSpeed_On_Status"},
+                        { "LSpdRamped","SMap_LineRun_SpeedRamped"},
+                        { "Hold_Req5","hold_Req_TMP"},
+                       { "Hold_Req4", "hold_Req_TMP"},
+                       { "Hold_Req3", "hold_Req_TMP"},
+                      { "Hold_Req2",  "S_SLC_SafeSpeedHold"},
+                      { "Hold_Req1",  "S_SLS_SafeSpeedHold"},
+                      { "DriversEnable_Bit",  "SMap_LineRun_DrivesEnable"},
+                     { "CB_DISABLE_Cmd",   "CB_Safety_DISABLE_Cmd"},
+                };
+
+                foreach (var tag in tags)
+                {
+                    if (rung.Contains(tag.Key))
+                    {
+                        rung = rung.Replace(tag.Key, tag.Value);
+                    }
+                }
+            }
+
             return rung;
 
         }
@@ -873,6 +911,36 @@ namespace SAI_OT_Apps.Server.Libraries
 
                 // Get the rung which the OTE contains the tag name
                 xmlRungString = findOTERung(xmlFilePath, targetTagName);
+
+                string searchString = "SpeedCheck";
+                bool containsText = targetTagName.Contains(searchString);
+                if (containsText)
+                {
+                    targetTagName = targetTagName.Replace("SpeedCheck.", "");
+
+                    Dictionary<string, string> tags = new Dictionary<string, string>
+                    {
+                        { "ZeroSpeed_Bit", "SMap_LIneRun_ZeroSpeed"},
+                        { "SpeedEnable_Bit","SMap_LIneRun_SpeedEnable"},
+                        { "SafeSpeed_Status","S_SafeSpeed_On_Status"},
+                        { "LSpdRamped","SMap_LineRun_SpeedRamped"},
+                        { "Hold_Req5","hold_Req_TMP"},
+                        { "Hold_Req4", "hold_Req_TMP"},
+                        { "Hold_Req3", "hold_Req_TMP"},
+                        { "Hold_Req2",  "S_SLC_SafeSpeedHold"},
+                        { "Hold_Req1",  "S_SLS_SafeSpeedHold"},
+                        { "DriversEnable_Bit",  "SMap_LineRun_DrivesEnable"},
+                        { "CB_DISABLE_Cmd",   "CB_Safety_DISABLE_Cmd"},
+                    };
+
+                    foreach (var tag in tags)
+                    {
+                        if (targetTagName.Contains(tag.Key))
+                        {
+                            targetTagName = targetTagName.Replace(tag.Key, tag.Value);
+                        }
+                    }
+                }
 
                 // Execute troubleshooting main code
                 directNodesReasons = await TroubleshootingOTE(xmlRungString, targetTagName, expectedValue);

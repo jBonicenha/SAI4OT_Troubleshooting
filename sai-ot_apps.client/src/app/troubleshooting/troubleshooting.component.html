@@ -21,6 +21,9 @@
           </div>
         </div>
       </div>
+      <div class="d-flex mt-1 mx-3 justify-content-center" *ngIf="loading">
+        <div id="spinner"></div> <span class="d-inline-block mx-2 mt-1"></span>
+      </div>
     </div>
     <div class="chat-input">
       <input [(ngModel)]="newMessage" placeholder="Type your message here..." (keyup.enter)="sendMessage()" />
