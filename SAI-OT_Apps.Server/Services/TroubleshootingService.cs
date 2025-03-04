@@ -30,7 +30,7 @@ namespace SAI_OT_Apps.Server.Services
         public async Task<Dictionary<string, object>> TroubleshootingProgram(string OTETagName)
         {
             Dictionary<string, object> troubleshootingResult = new Dictionary<string, object>();
-            string xmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
+            string xmlFilePath = @"C:\Users\jbonicen\OneDrive - Stefanini\Documents\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
 
             try
             {
@@ -67,11 +67,6 @@ namespace SAI_OT_Apps.Server.Services
 
             return allWrongTagsFormatted;
 
-            ////OPC UA Connection test
-            //List<string> tagList = new List<string> { "PUMP_1", "MOTOR_1" };
-            //String tagsFromClient = await OPCClient(tagList);
-            //Console.WriteLine(tagsFromClient);
-
         } // End Main
 
         // Função recursiva.  
@@ -80,7 +75,7 @@ namespace SAI_OT_Apps.Server.Services
             try
             {
                 XmlDocument Xdoc = new XmlDocument();
-                Xdoc.Load(@"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X"); // Load XML File. (In this case, write the correct file path from your computer).
+                Xdoc.Load(@"C:\Users\jbonicen\OneDrive - Stefanini\Documents\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X"); // Load XML File. (In this case, write the correct file path from your computer).
                 XmlElement root = Xdoc.DocumentElement;
 
                 XmlNodeList nodes = root.SelectNodes("//*[contains(text(), 'OTE(" + OTELine + ")')]"); // Extract the RUNG containing the specified OTE
@@ -382,12 +377,12 @@ namespace SAI_OT_Apps.Server.Services
         {
             try
             {
-                string XmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
+                string XmlFilePath = @"C:\Users\jbonicen\OneDrive - Stefanini\Documents\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
                 string searchString = "SpeedCheck";
                 bool containsText = TagName.Contains(searchString);
                 if (containsText)
                 {
-                    XmlFilePath = @"C:\SAI\SAITroubleshooting\SpeedCheck.XML";
+                    XmlFilePath = @"C:\Users\jbonicen\OneDrive - Stefanini\Documents\SAI\SAITroubleshooting\SpeedCheck.XML";
                     TagName = TagName.Replace("SpeedCheck.", "");
                 }
 
@@ -418,7 +413,7 @@ namespace SAI_OT_Apps.Server.Services
                             firstRung = firstRung.Replace(tag.Key, tag.Value);
                         }
                     }
-                    XmlFilePath = @"C:\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
+                    XmlFilePath = @"C:\Users\jbonicen\OneDrive - Stefanini\Documents\SAI\SAITroubleshooting\PLC_M45_1525_Dev.L5X";
                 }
 
                 // Collect all rungs starting with the first one
